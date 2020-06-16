@@ -1,17 +1,19 @@
 /*!
  * \file      TaskMgr.c
  *
- * (C)Tomy-Technology
- * \copyright Revised BSD License, see section \ref LICENSE.
+ * copyright Revised BSD License, see section \ref LICENSE
  *
- * \author  Tomoaki Yamaguch
- */
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
+ *
+ **************************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include "TaskMgmt.h"
 #include "Peripheral.h"
 #include "utilities.h"
-
+#include "MQTTSNDefines.h"
+#include "MQTTSNClient.h"
+#include "MQTTSNTopic.h"
 #include "device.h"
 #include "device-config.h"
 #include "eeprom.h"
@@ -19,15 +21,20 @@
 #include "gpio.h"
 #include "systime.h"
 #include "uart.h"
+#include "LoRaLink.h"
 
-const char theVersion[] = "1.4.4";
+const char theVersion[] = "0.0.0";
 
 #define TASK_EXECUTION_TIME_UNIT     60       // 1 munit = 60 secs
 #define TASK_EXECUTION_PENDING       0xff000000
 
 #define TASK_LONG_INTERVAL           4       // Sec
 
+#define UTC_DIFF                     9       // UTC difference
+
 extern void LoRaLinkInitilize(void);
+
+//static void Task_changeInterval(uint8_t id, uint16_t interval);
 
 /*
  * Task List element
@@ -55,10 +62,12 @@ static TimerEvent_t WakeupTimer;
 static uint8_t Task_ExecFlg = 0;
 static uint8_t Task_Int0Cnt = 0;
 static uint8_t Task_Int1Cnt = 0;
-static uint8_t Wakeup_Flg = 0;
+static uint8_t Wakeup_Flg   = 0;
 
 static SysTime_t SystInt1 = {0};
 static uint8_t LongInterval1 = 0;
+
+LoRaLinkPacket_t*  PktReceived = NULL;
 
 /*
  *  Task List
@@ -72,14 +81,9 @@ __attribute__((weak)) SUBSCRIBE_LIST  = { END_OF_SUBSCRIBE_LIST };
 
 
 /*
- * Downlink variables
- */
-static Payload_t Task_Payload;
-
-/*
  * Print out Version
  */
-static void printVersion(void)
+void printVersion(void)
 {
 	printf("\r\n\r\n\r\n   %s\r\n\r\n", theVersion );
 }
@@ -87,15 +91,11 @@ static void printVersion(void)
 /*
  *  Forward declaration
  */
-static void TaskExecSubscribeList(const char* topic, Payload_t* payload);
+//static void TaskExecSubscribeList(const char* topic, Payload_t* payload);
 
 /**
  *  Framework's functions
  */
-__attribute__((weak)) void OnJoin(void)
-{
-}
-
 __attribute__((weak)) void start(void)
 {
 }
@@ -157,10 +157,12 @@ static void OnWakeupTimerEvent(void* context)
 	Wakeup_Flg = 1;
 }
 
+
 /*
  * Task List
  */
 static Task_t* TaskListHead = 0;
+
 
 static void Task_add(Task_t* task)
 {
@@ -206,6 +208,8 @@ static void Task_add(Task_t* task)
 	}
 }
 
+/*
+
 static Task_t* Task_eject(uint8_t id)
 {
 	Task_t* cur = TaskListHead;
@@ -244,6 +248,7 @@ static Task_t* Task_eject(uint8_t id)
 	}
 	return 0;
 }
+*/
 
 void Task_print(void)
 {
@@ -318,7 +323,7 @@ static void Task_init(void)
 		Task_add(task);
 	}
 
-	// Initialize Task Execution & Wakeup Timer
+	// Initialize Task Execution & PingReq Timer
     TimerInit( &TaskExecutionTimer, OnTaskExecutionTimerEvent );
 }
 
@@ -349,6 +354,9 @@ static void Task_sleep(uint32_t execTime)
 			TimerSetValue( &TaskExecutionTimer, tSh * 1000 );
 			TimerStart( &TaskExecutionTimer );
 			TaskListHead->isRunning = 1;
+
+			Disconnect( tSh * 1000 );
+
 			DeviceLowPowerHandler( );
 		}
 		else if ( TaskListHead->isRunning == 1 )
@@ -357,6 +365,8 @@ static void Task_sleep(uint32_t execTime)
 		}
 	}
 }
+
+/*
 
 static void Task_changeInterval(uint8_t id, uint16_t interval)
 {
@@ -379,12 +389,14 @@ static void Task_changeInterval(uint8_t id, uint16_t interval)
 //		Task_print();
 	}
 }
+*/
+
 
 static void Task_run(void)
 {
 	uint32_t execTime = 0;
 
-	while(1)
+	while ( true )
 	{
 		if ( TaskListHead == 0 )
 		{
@@ -396,11 +408,8 @@ static void Task_run(void)
 			execTime = TaskListHead->exTime;
 			Task_sleep(execTime);
 		}
-		else
-		{
-			// Sleep until receiving Beacon or Downlink
-			DeviceLowPowerHandler( );
-		}
+
+		CheckPingRequest();
 
 		if ( Task_Int0Cnt > 0 )
 		{
@@ -419,7 +428,8 @@ static void Task_run(void)
 
 			while( task->exTime <= SysTimeGet().Seconds )
 			{
-				task->callback();
+				task->callback();   //  Execute a Task   ( send MQTT-SN message in it )
+
 //				Task_print();
 				task->isRunning = 0;
 				TaskListHead = task->next;
@@ -436,41 +446,10 @@ static void Task_run(void)
 				task = TaskListHead;
 			}
 		}
-		else
-		{
-			// Check Beacon or Downlink
-//			LoRaMacProcess( );
-
-			// Check Downlink
-//			if ( Task_FPort > 0 )
-			{
-//				CheckDownlink();
-			}
-		}
 	}
 }
 
-static void TaskExecSubscribeList(const char* topic, Payload_t* payload)
-{
-/*
-    if ( port )
-    {
-        for ( uint8_t i = 0; thePortList[i].port != 0;  i++ )
-        {
-            if ( port == thePortList[i].port  )
-            {
-                thePortList[i].callback(payload);
-                break;
-            }
-        }
-    }
-*/
-}
 
-Payload_t* TaskGetPayload(void)
-{
-	return &Task_Payload;
-}
 
 void WaitMs(uint32_t milsecs)
 {
@@ -556,20 +535,21 @@ bool IsLongInterval(void)
 {
 	return LongInterval1;
 }
+
 /*
  *  Application evoked.
  */
 int main( void )
 {
 	DeviceInitMcu();
-	printVersion();
 	LoRaLinkInitilize();
-	SysTimeSetTimeZone(9);   // Time zone is JST
+	SysTimeSetTimeZone( UTC_DIFF );   // Time zone is JST
 	setInterrupt();
+	srand1( DeviceGetRandomSeed());
+	Task_init();
 
 	start();
 
-	Task_init();
 	Task_run();
 }
 

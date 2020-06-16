@@ -11,21 +11,52 @@
 #include <stdbool.h>
 #include "LoRaLink.h"
 #include "LoRaLinkCrypto.h"
-#include "sx1276/sx1276.h"
+#include "sx1276.h"
 #include "timer.h"
 #include "delay.h"
 #include "LoRaLinkApi.h"
 #include "device.h"
 #include "utilities.h"
 
-
+/*!
+ * LoRaLink parameters
+ */
 #define LORALINK_WINDOW_TIMEOUT   6
 #define LORALINK_CODERATE         1       //  4/5
 #define LORALINK_PREAMBLE_LENGTH  8
 #define LORALINK_DUTYCYCLE        10      //  10%
 
-#define LORALINK_RSSI_THRESH     -85
+#define LORALINK_RSSI_THRESH     -83
 #define LORALINK_MAX_CARRIERSENSE_TIME  5
+
+#define TX_TIMEOUT_DEV_VAL      4000
+
+/*!
+ * LBT delay range
+ */
+#define RND_UPL         (uint32_t)400    // upper limit 400ms
+#define RND_LWL         (uint32_t)100    // lower limit 100ms
+
+
+/*!
+ * ARIB T-108 standard Parameters
+ */
+uint8_t  MaxPayloadDwell0[] = {91, 188, 200, 244, 244, 244, 244, 244 };
+uint8_t  MaxPayloadDwell1[] = { 0, 0, 15, 57, 125, 244, 244, 244 };
+
+// 24ch - 38ch
+uint32_t FreqenciesDwell0[] = { 920600000, 920800000, 921000000, 921200000, 921400000, 921600000,
+						        921800000, 922000000, 922200000, 922400000, 922600000, 922800000, 923000000, 923200000, 923400000 };
+// 39ch - 62ch
+uint32_t FreqenciesDwell1[] = { 923600000, 923800000, 924000000, 924200000, 924400000, 924600000, 924800000, 925000000, 925200000,
+		                        925400000, 925600000, 925800000, 926000000, 926200000, 926400000, 926600000, 926800000, 927000000,
+		                        927200000, 927400000, 927600000, 927800000, 928000000 };
+
+uint8_t  DwelltimeRange[]   = { 24, 39, 62 };
+
+uint32_t Bandwidths[]       = { 125000, 125000, 125000, 125000, 125000, 125000, 250000, 0 };
+
+
 
 /*
  * Module context.
@@ -50,42 +81,10 @@ struct
  */
 RxDoneParams_t RxDoneParams;
 
-
-/*!
- * Defines the LoRaMac radio events status
- */
-typedef union uLoRaMacRadioEvents
-{
-    uint32_t Value;
-    struct sEvents
-    {
-        uint32_t RxTimeout : 1;
-        uint32_t RxError   : 1;
-        uint32_t TxTimeout : 1;
-        uint32_t RxDone    : 1;
-        uint32_t TxDone    : 1;
-    }Events;
-}LoRaLinkRadioEvents_t;
-
-uint32_t Bandwidths[] = { 125000, 125000, 125000, 125000, 125000, 125000, 250000, 0 };
-uint8_t MaxPayloadDwell0[] = { 54, 54, 54, 118, 245, 245, 245, 245 };
-uint8_t MaxPayloadDwell1[] = { 0, 0, 14, 56, 128, 245, 245, 245 };
-
-uint32_t FreqenciesDwell0[] = { 920600000, 920800000, 921000000, 921200000, 921400000, 921600000,
-						        921800000, 922000000, 922200000, 922400000, 922600000, 922800000, 923000000, 923200000, 923400000 };
-
-uint32_t FreqenciesDwell1[] = { 923600000, 923800000, 924000000, 924200000, 924400000, 924600000, 924800000, 925000000, 925200000,
-		                        925400000, 925600000, 925800000, 926000000, 926200000, 926400000, 926600000, 926800000, 927000000,
-		                        927200000, 927400000, 927600000, 927800000 };
-
-uint8_t DwelltimeRange[] = { 24, 39, 61 };
-
-
-
 /*!
  * LoRaLink Device State Machine Status
  */
-LoRaLinkDeviceStatus_t DeviceStatus;
+volatile LoRaLinkDeviceStatus_t DeviceStatus;
 
 /*!
  * LoRaLink radio events status
@@ -97,14 +96,16 @@ LoRaLinkRadioEvents_t LoRaLinkRadioEventsStatus = { .Value = 0 };
  */
 bool LoRaLinkNextTx = false;
 
+
 /*
- *
+ * Forward declarations
  */
 static void ProcessRadioRxDone( void );
 static void ProcessRadioTxDone( void );
 static void ProcessRadioRxTimeout( void );
 static void ProcessRadioTxTimeout( void );
 static void ProcessRadioRxError( void );
+static void ProcessRadioTxDelaied( void );
 
 static void OnRadioTxDone( void );
 static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr );
@@ -114,12 +115,13 @@ static void OnRadioRxTimeout( void );
 static void OnTxDelayedTimerEvent( void *context );
 
 static void LoRaLinkHandleIrqEvents( void );
-//static void LoRaLinkDeviceHandleIrqEvents( void );
 static bool scheduleTx( void );
 static bool SetTxConfig( TxConfigParams_t* txConfig, TimerTime_t* txTimeOnAir );
 static bool SetRxConfig( RxConfigParams_t* rxConfig );
-static uint32_t GetBandwidth( uint32_t drIndex );
 static void CalcBackOffTime( void );
+static uint32_t GetBandwidth( uint8_t sfValue );
+static uint8_t GetMaxPayloadLength( uint8_t sfValue );
+
 
 
 void LoRaLinkSetPanId(uint16_t panId)
@@ -142,92 +144,39 @@ void LoRaLinkInitilize(void)
 	LoRaLinkRadioEvents.FhssChangeChannel = NULL;
 
 	SX1276Init(&LoRaLinkRadioEvents);
-	SX1276SetSyncword(LORA_SYNCWORD);
 
 	TimerInit(&LoRaLinkCtx.TxDelayedTimer, OnTxDelayedTimerEvent);
-
-
+	LoRaLinkCtx.LastTxDoneTime = 0;
 }
 
-LoRaLinkStatus_t LoRaLinkDeviceInit( uint8_t rxCh, uint8_t txCh, LoRaLinkSf_t sfValue, int8_t power )
+LoRaLinkStatus_t LoRaLinkDeviceInit( uint8_t* key, uint16_t panId, uint8_t devAddr,uint8_t syncWord,  uint8_t uplinkCh, uint8_t dwnlinkCh, LoRaLinkSf_t sfValue, int8_t power )
 {
-	LoRaLinkStatus_t rc = LORALINK_STATUS_OK;
-
-
-	if ( ( rxCh <= DwelltimeRange[0] && rxCh < DwelltimeRange[1] ) && ( txCh <= DwelltimeRange[0] && txCh < DwelltimeRange[1] ) )
+	if ( ( uplinkCh <= DwelltimeRange[0] && uplinkCh < DwelltimeRange[1] ) && ( dwnlinkCh <= DwelltimeRange[0] && dwnlinkCh < DwelltimeRange[1] ) )
 	{
 		LoRaLinkCtx.LoRaLinkDwelltime = DWELLTIME_0;
-		LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell0[ rxCh - DwelltimeRange[0]];
-		LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell0[ txCh - DwelltimeRange[0]];
+		LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell0[ dwnlinkCh - DwelltimeRange[0] ];
+		LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell0[ uplinkCh - DwelltimeRange[0] ];
 		LoRaLinkCtx.TxConfig.DutyCycle = 0;
 		LoRaLinkCtx.TxConfig.PktLen = MaxPayloadDwell0[SF_12 - sfValue];
 	}
-	else if ( ( rxCh <= DwelltimeRange[1] && rxCh < DwelltimeRange[2] ) && ( txCh <= DwelltimeRange[1] && txCh < DwelltimeRange[2] ) )
+	else if ( ( uplinkCh >= DwelltimeRange[1] && uplinkCh <= DwelltimeRange[2] ) && ( dwnlinkCh >= DwelltimeRange[1] && dwnlinkCh <= DwelltimeRange[2] ) )
 	{
-		if ( sfValue >= SF_11 )
+		if ( sfValue > SF_10 )
 		{
-			return LORALINK_STATUS_ERROR;
+			return LORALINK_STATUS_DATARATE_INVALID;
 		}
 		else
 		{
 			LoRaLinkCtx.LoRaLinkDwelltime = DWELLTIME_1;
-			LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell1[ rxCh - DwelltimeRange[1]];
-			LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell1[ txCh - DwelltimeRange[1]];
+			LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell1[ dwnlinkCh - DwelltimeRange[1] ];
+			LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell1[ uplinkCh - DwelltimeRange[1] ];
 			LoRaLinkCtx.TxConfig.DutyCycle = LORALINK_DUTYCYCLE;
 			LoRaLinkCtx.TxConfig.PktLen = MaxPayloadDwell1[SF_12 - sfValue];
 		}
 	}
 	else
 	{
-		return LORALINK_STATUS_ERROR;
-	}
-
-	LoRaLinkCtx.RxConfig.SFValue = sfValue;
-	LoRaLinkCtx.TxConfig.SFValue = sfValue;
-	LoRaLinkCtx.TxConfig.TxPower = power;
-	LoRaLinkCtx.RxConfig.RxContinuous = false;
-	LoRaLinkCtx.RxConfig.WindowTimeout = LORALINK_WINDOW_TIMEOUT;
-
-	return rc;
-}
-
-
-
-LoRaLinkStatus_t LoRaLinkModemProcess( LoRaLinkDeviceType_t devType, uint8_t devRxCh, uint8_t devTxCh, LoRaLinkSf_t sfValue, int8_t power)
-{
-	LoRaLinkStatus_t rc = LORALINK_STATUS_ERROR;
-
-	if ( devType == LORALINK_DEVICE )
-	{
-		return rc;
-	}
-
-	if ( ( devRxCh >= DwelltimeRange[0] && devRxCh < DwelltimeRange[1] ) && ( devTxCh >= DwelltimeRange[0] && devTxCh < DwelltimeRange[1] ) )
-	{
-		LoRaLinkCtx.LoRaLinkDwelltime = DWELLTIME_0;
-		LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell0[ devTxCh - DwelltimeRange[0]];
-		LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell0[ devRxCh - DwelltimeRange[0]];
-		LoRaLinkCtx.TxConfig.DutyCycle = 0;
-		LoRaLinkCtx.TxConfig.PktLen = MaxPayloadDwell0[SF_12 - sfValue];
-	}
-	else if ( ( devRxCh >= DwelltimeRange[1] && devRxCh < DwelltimeRange[2] ) && ( devTxCh >= DwelltimeRange[1] && devTxCh < DwelltimeRange[2] ) )
-	{
-		if ( sfValue >= SF_11 )
-		{
-			return rc;
-		}
-		else
-		{
-			LoRaLinkCtx.LoRaLinkDwelltime = DWELLTIME_1;
-			LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell1[ devTxCh - DwelltimeRange[1]];
-			LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell1[ devRxCh - DwelltimeRange[1]];
-			LoRaLinkCtx.TxConfig.DutyCycle = LORALINK_DUTYCYCLE;
-			LoRaLinkCtx.TxConfig.PktLen = MaxPayloadDwell1[SF_12 - sfValue];
-		}
-	}
-	else
-	{
-		return rc;
+		return LORALINK_STATUS_FREQUENCY_INVALID;
 	}
 
 	LoRaLinkCtx.RxConfig.SFValue = sfValue;
@@ -236,19 +185,75 @@ LoRaLinkStatus_t LoRaLinkModemProcess( LoRaLinkDeviceType_t devType, uint8_t dev
 	LoRaLinkCtx.RxConfig.RxContinuous = true;
 	LoRaLinkCtx.RxConfig.WindowTimeout = LORALINK_WINDOW_TIMEOUT;
 
+	LoRaLinkCryptoSetKey( key );
+	LoRaLinkSetDeviceId( panId, devAddr);
 
-	if ( devType == LORALINK_MODEM_TX )
+	SX1276SetSyncword(syncWord);
+
+	return LORALINK_STATUS_OK;
+}
+
+
+
+LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, LoRaLinkUartType_t uartType, uint8_t syncWord, uint8_t uplinkCh, uint8_t dwnlinkCh, LoRaLinkSf_t sfValue, int8_t power )
+{
+	LoRaLinkStatus_t rc = LORALINK_STATUS_ERROR;
+
+	if ( ( dwnlinkCh >= DwelltimeRange[0] && dwnlinkCh < DwelltimeRange[1] ) && ( uplinkCh >= DwelltimeRange[0] && uplinkCh < DwelltimeRange[1] ) )
 	{
+		LoRaLinkCtx.LoRaLinkDwelltime = DWELLTIME_0;
+		LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell0[ uplinkCh - DwelltimeRange[0] ];
+		LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell0[ dwnlinkCh - DwelltimeRange[0] ];
+		LoRaLinkCtx.TxConfig.DutyCycle = 0;
+		LoRaLinkCtx.TxConfig.PktLen = MaxPayloadDwell0[SF_12 - sfValue];
+	}
+	else if ( ( dwnlinkCh >= DwelltimeRange[1] && dwnlinkCh <= DwelltimeRange[2] ) && ( uplinkCh >= DwelltimeRange[1] && uplinkCh <= DwelltimeRange[2] ) )
+	{
+		if ( sfValue > SF_10 )
+		{
+			return LORALINK_STATUS_DATARATE_INVALID;
+		}
+		else
+		{
+			LoRaLinkCtx.LoRaLinkDwelltime = DWELLTIME_1;
+			LoRaLinkCtx.RxConfig.Frequency = FreqenciesDwell1[ uplinkCh - DwelltimeRange[1] ];
+			LoRaLinkCtx.TxConfig.Frequency = FreqenciesDwell1[ dwnlinkCh - DwelltimeRange[1] ];
+			LoRaLinkCtx.TxConfig.DutyCycle = LORALINK_DUTYCYCLE;
+			LoRaLinkCtx.TxConfig.PktLen = MaxPayloadDwell1[SF_12 - sfValue];
+		}
+	}
+	else
+	{
+		return LORALINK_STATUS_FREQUENCY_INVALID;
+	}
+
+	LoRaLinkCtx.RxConfig.SFValue = sfValue;
+	LoRaLinkCtx.TxConfig.SFValue = sfValue;
+	LoRaLinkCtx.TxConfig.TxPower = power;
+	LoRaLinkCtx.RxConfig.WindowTimeout = LORALINK_WINDOW_TIMEOUT;
+
+	LoRaLinkCryptoSetKey( key );
+	LoRaLinkSetDeviceId( panId, devAddr);
+
+	SX1276SetSyncword(syncWord);
+
+	if ( uartType == LORALINK_UART_TX )
+	{
+		LoRaLinkCtx.RxConfig.RxContinuous = false;
 		DeviceStatus = DEVICE_STATE_TX_INIT;
 	}
 	else
 	{
+		LoRaLinkCtx.RxConfig.RxContinuous = true;
 		DeviceStatus = DEVICE_STATE_RX_INIT;
 	}
+
+
 
 	rc = LORALINK_STATUS_OK;
 	LoRaLinkApiReadParameters_t resp = { 0 };
 	LoRaLinkApi_t api = { 0 };
+	LoRaLinkPacket_t ack = { 0 };
 
 	while ( true )
 	{
@@ -267,15 +272,12 @@ LoRaLinkStatus_t LoRaLinkModemProcess( LoRaLinkDeviceType_t devType, uint8_t dev
 			break;
 
 		case DEVICE_STATE_RX_DONE:
-			LoRaLinkApiPutRecvData( &LoRaLinkPacket );
+			LoRaLinkApiWrite( &LoRaLinkPacket );
 			DeviceStatus = DEVICE_STATE_RX_INIT;
 			break;
 
 		case DEVICE_STATE_RX_TIMEOUT:
 		case DEVICE_STATE_RX_ERROR:
-
-		    // ToDo create Response Error API
-
 			DeviceStatus = DEVICE_STATE_RX_INIT;
 			break;
 
@@ -303,6 +305,13 @@ LoRaLinkStatus_t LoRaLinkModemProcess( LoRaLinkDeviceType_t devType, uint8_t dev
 			break;
 
 		case DEVICE_STATE_TX_DONE:
+			ack.FRMPayloadType = API_RSP_ACK;
+			ack.FRMPayloadSize = 0;
+			ack.DestAddr = api.SourceAddr;
+			ack.SourceAddr = api.SourceAddr;
+			ack.Rssi = 0;
+			ack.Snr = 0;
+			LoRaLinkApiWrite(&ack);
 			DeviceStatus = DEVICE_STATE_TX_INIT;
 			break;
 
@@ -317,9 +326,12 @@ LoRaLinkStatus_t LoRaLinkModemProcess( LoRaLinkDeviceType_t devType, uint8_t dev
 }
 
 
-LoRaLinkStatus_t LoRaLinkSend( uint32_t timeout )
+static LoRaLinkStatus_t LoRaLinkSendPacket( uint32_t timeout )
 {
 	LoRaLinkNextTx = true;
+	uint32_t  nfcTime = 0;
+	int32_t   delay;
+
 
 	while ( true )
 	{
@@ -332,10 +344,6 @@ LoRaLinkStatus_t LoRaLinkSend( uint32_t timeout )
 			{
 				LoRaLinkNextTx = scheduleTx();
 			}
-			else
-			{
-				return LORALINK_STATUS_OK;
-			}
 			break;
 
 		case DEVICE_STATE_CYCLE:
@@ -344,20 +352,64 @@ LoRaLinkStatus_t LoRaLinkSend( uint32_t timeout )
 			DeviceStatus = DEVICE_STATE_SLEEP;
 			break;
 
-		break;
+		case DEVICE_STATE_TX_NO_FREE_CH:
+			delay = randr( RND_LWL, RND_UPL);
+
+			if ( ( nfcTime += delay ) < timeout )
+			{
+				TimerSetValue( &LoRaLinkCtx.TxDelayedTimer, delay );
+				TimerStart(&LoRaLinkCtx.TxDelayedTimer);
+				DeviceStatus = DEVICE_STATE_SLEEP;
+			}
+			else
+			{
+				return LORALINK_STATUS_CHANNEL_NOT_FREE;
+			}
+			break;
 
 		case DEVICE_STATE_SLEEP:
 			DeviceLowPowerHandler( );
 			break;
 
+		case DEVICE_STATE_TX_DONE:
+			return LORALINK_STATUS_OK;
+
+		case DEVICE_STATE_TX_TIMEOUT:
+			return LORALINK_STATUS_TX_TIMEOUT;
+
 		default:
-			break;
+			return LORALINK_STATUS_ERROR;
 		}
 	}
 }
 
-LoRaLinkStatus_t LoRaLinkRecv( LoRaLinkPacket_t* pkt, uint32_t timeout )
+LoRaLinkStatus_t LoRaLinkSend( uint8_t destAddr, uint8_t payloadType, uint8_t* buffer, uint8_t buffLen, uint32_t timeout )
 {
+	LoRaLinkApi_t api = { 0 };
+	LoRaLinkPacket_t pkt = { 0 };
+
+	if ( buffLen > LoRaLinkGetMaxPayloadLength() )
+	{
+		return LORALINK_STATUS_LENGTH_ERROR;
+	}
+
+	api.PanId = LoRaLinkCtx.LoRaLinkPanId;
+	api.DestinationAddr = destAddr;
+	api.SourceAddr = LoRaLinkCtx.LoRaLinkDeviceAddr;
+	api.PayloadType = payloadType;
+	api.PayloadLen = buffLen;
+	memcpy1( api.Payload, buffer, buffLen );
+
+	LoRaLinkApiSetTxData( &pkt, &api );
+	DeviceStatus = DEVICE_STATE_TX;
+
+	return LoRaLinkSendPacket(timeout);
+}
+
+LoRaLinkStatus_t LoRaLinkRecvPacket( LoRaLinkPacket_t* pkt, uint32_t timeout )
+{
+	DeviceStatus = DEVICE_STATE_RX_INIT;
+
 	while ( true )
 	{
 		LoRaLinkHandleIrqEvents();
@@ -366,7 +418,11 @@ LoRaLinkStatus_t LoRaLinkRecv( LoRaLinkPacket_t* pkt, uint32_t timeout )
 		{
 		case DEVICE_STATE_RX_INIT:
 			SetRxConfig( &LoRaLinkCtx.RxConfig );
-			SX1276SetRx(timeout);
+			DeviceStatus = DEVICE_STATE_RX;
+			break;
+
+		case DEVICE_STATE_RX:
+			SX1276SetRx( timeout );
 
 			if ( timeout > 0 )
 			{
@@ -376,34 +432,39 @@ LoRaLinkStatus_t LoRaLinkRecv( LoRaLinkPacket_t* pkt, uint32_t timeout )
 
 		case DEVICE_STATE_SLEEP:
 			DeviceLowPowerHandler( );
+
 			break;
 
 		case DEVICE_STATE_RX_DONE:
-			pkt = &LoRaLinkPacket;
+			pkt->Rssi = LoRaLinkPacket.Rssi;
+			pkt->Snr = LoRaLinkPacket.Snr;
+			pkt->PanId = LoRaLinkPacket.PanId;
+			pkt->SourceAddr = LoRaLinkPacket.SourceAddr;
+			pkt->FRMPayloadType = LoRaLinkPacket.FRMPayloadType;
+			pkt->FRMPayloadSize = LoRaLinkPacket.FRMPayloadSize;
+			pkt->FRMPayload = LoRaLinkPacket.FRMPayload;
 			return LORALINK_STATUS_OK;
 
 		case DEVICE_STATE_RX_TIMEOUT:
-			pkt = NULL;
 			return LORALINK_STATUS_RX_TIMEOUT;
 
 		default:
-			pkt = NULL;
 			return LORALINK_STATUS_ERROR;
+			break;
 		}
 	}
 }
 
-void LoRaLinkSetTxData( LoRaLinkPacket_t* LoRaLinkPkt )
+void LoRaLinkSetTxData( LoRaLinkPacket_t* pkt )
 {
-	LoRaLinkCtx.TxMsg.Buffer = LoRaLinkCtx.PktBuffer;
-
-	// encrypt Payload
-	LoRaLinkCryptoSecureMessage(LoRaLinkPkt);
-
-	LoRaLinkCtx.PktBufferLen = LoRaLinkPkt->BufSize;
+	// encrypt Payload and Set it into LoRaLinkCtx.PktBuffer
+	pkt->Buffer = LoRaLinkCtx.PktBuffer;
+	LoRaLinkCryptoSecureMessage(pkt);
+	LoRaLinkSerializeData(pkt);
+	LoRaLinkCtx.PktBufferLen = pkt->BufSize;
 }
 
-LoRaLinkStatus_t LoRaLinkSerializeData(LoRaLinkPacket_t* pkt)
+LoRaLinkStatus_t LoRaLinkSerializeData( LoRaLinkPacket_t* pkt)
 {
 	if ( pkt == NULL )
 	{
@@ -420,6 +481,7 @@ LoRaLinkStatus_t LoRaLinkSerializeData(LoRaLinkPacket_t* pkt)
 	*pos++ = (uint8_t)pkt->PanId & 0xff;
 	*pos++ = pkt->DestAddr;
 	*pos++ = pkt->SourceAddr;
+	*pos++ = pkt->FRMPayloadType;
 
 	memcpy1(pos, pkt->FRMPayload, pkt->FRMPayloadSize );
 	pos += pkt->FRMPayloadSize;
@@ -442,6 +504,7 @@ LoRaLinkStatus_t LoRaLinkDeserializeData(LoRaLinkPacket_t* pkt, RxDoneParams_t* 
 	pos += 2;
 	pkt->DestAddr = *pos++;
 	pkt->SourceAddr = *pos++;
+	pkt->FRMPayloadType = *pos++;
 	pkt->FRMPayloadSize = rxData->Size - LORALINK_HDR_LEN;
 	memcpy1(pkt->FRMPayload, pos, pkt->FRMPayloadSize );
 	setUint32(pos + pkt->FRMPayloadSize, pkt->MIC);
@@ -449,22 +512,36 @@ LoRaLinkStatus_t LoRaLinkDeserializeData(LoRaLinkPacket_t* pkt, RxDoneParams_t* 
 	return LORALINK_STATUS_OK;
 }
 
+LoRaLinkStatus_t LoRaLinkSetDeviceId( uint16_t panId, uint8_t devAddr )
+{
+	LoRaLinkStatus_t rc = LORALINK_STATUS_PARAMETER_INVALID;
+
+	if ( panId > 0 && devAddr > 0 )
+	{
+		LoRaLinkCtx.LoRaLinkPanId = panId;
+		LoRaLinkCtx.LoRaLinkDeviceAddr = devAddr;
+		rc = LORALINK_STATUS_OK;
+	}
+	return rc;
+}
+
 static bool scheduleTx( void )
 {
-
 	CalcBackOffTime();
+
 	if ( LoRaLinkCtx.BackoffTime > 0 )
 	{
 		DeviceStatus = DEVICE_STATE_CYCLE;
-		return true;
 	}
-
-	if ( SX1276IsChannelFree( MODEM_FSK, LoRaLinkCtx.TxConfig.Frequency, LORALINK_RSSI_THRESH, LORALINK_MAX_CARRIERSENSE_TIME ) == true )
+	else if ( SX1276IsChannelFree( MODEM_FSK, LoRaLinkCtx.TxConfig.Frequency, LORALINK_RSSI_THRESH, LORALINK_MAX_CARRIERSENSE_TIME ) == true )
 	{
 		SetTxConfig( &LoRaLinkCtx.TxConfig, &LoRaLinkCtx.TxTimeOnAir );
-
 		SX1276Send( LoRaLinkCtx.PktBuffer,  LoRaLinkCtx.PktBufferLen );
 		return false;
+	}
+	else
+	{
+		DeviceStatus = DEVICE_STATE_TX_NO_FREE_CH;
 	}
 	return true;
 }
@@ -474,11 +551,11 @@ static bool SetRxConfig( RxConfigParams_t* rxConfig )
 {
     RadioModems_t modem = MODEM_LORA;
     uint8_t maxPayload = 0;
-    int8_t dr = SF_12 - rxConfig->SFValue;
-    uint32_t bandwidth = GetBandwidth(dr);
+    uint32_t bandwidth = GetBandwidth(rxConfig->SFValue);
 
     if( SX1276GetStatus( ) != RF_IDLE )
     {
+    	DLOG_MSG_INT( "RadioState", (int)SX1276GetStatus( ) );
         return false;
     }
 
@@ -486,14 +563,7 @@ static bool SetRxConfig( RxConfigParams_t* rxConfig )
 
 	SX1276SetRxConfig( modem, bandwidth, (uint32_t)rxConfig->SFValue, LORALINK_CODERATE, 0, LORALINK_PREAMBLE_LENGTH, rxConfig->WindowTimeout, false, 0, true, false, 0, false, rxConfig->RxContinuous );
 
-    if ( LoRaLinkCtx.LoRaLinkDwelltime == DWELLTIME_0 )
-    {
-    	maxPayload = MaxPayloadDwell0[dr];
-    }
-    else
-    {
-    	maxPayload = MaxPayloadDwell1[dr];
-    }
+	maxPayload = GetMaxPayloadLength(rxConfig->SFValue);
 
     SX1276SetMaxPayloadLength( modem, maxPayload + LORALINK_HDR_LEN + LORALINK_MIC_LEN);
 
@@ -504,13 +574,12 @@ static bool SetRxConfig( RxConfigParams_t* rxConfig )
 static bool SetTxConfig( TxConfigParams_t* txConfig, TimerTime_t* txTimeOnAir )
 {
     RadioModems_t modem = MODEM_LORA;
-    int8_t phyDr = txConfig->SFValue;
-    uint32_t bandwidth = GetBandwidth(SF_12 - phyDr);
+    uint32_t bandwidth = GetBandwidth(txConfig->SFValue);
 
     // Setup the radio frequency
     SX1276SetChannel( txConfig->Frequency );
 
-	SX1276SetTxConfig( modem, txConfig->TxPower, 0, bandwidth, phyDr, LORALINK_CODERATE , LORALINK_PREAMBLE_LENGTH, false, true, 0, 0, false, 4000 );
+	SX1276SetTxConfig( modem, txConfig->TxPower, 0, bandwidth, txConfig->SFValue, LORALINK_CODERATE , LORALINK_PREAMBLE_LENGTH, false, true, 0, 0, false, TX_TIMEOUT_DEV_VAL );
 
     // Setup maximum payload length of the radio driver
     SX1276SetMaxPayloadLength( modem, LoRaLinkCtx.PktBufferLen );
@@ -520,12 +589,52 @@ static bool SetTxConfig( TxConfigParams_t* txConfig, TimerTime_t* txTimeOnAir )
     return true;
 }
 
-
-
-
-static uint32_t GetBandwidth( uint32_t drIndex )
+LoRaLinkPacket_t* LoRaLinkClearPacket( LoRaLinkPacket_t* pkt )
 {
-    switch( Bandwidths[drIndex] )
+	pkt->BufSize = 0;
+	pkt->Buffer = NULL;
+	pkt->DestAddr = 0;
+	pkt->FRMPayload = NULL;
+	pkt->FRMPayloadSize = 0;
+	pkt->FRMPayloadType = 0;
+	pkt->MIC = 0;
+	pkt->PanId = 0;
+	pkt->Rssi = 0;
+	pkt->Snr = 0;
+	pkt->SourceAddr = 0;
+	return pkt;
+}
+
+uint8_t LoRaLinkGetSourceAddr(void)
+{
+	return LoRaLinkCtx.LoRaLinkDeviceAddr;
+}
+
+uint16_t LoRaLinkGetPanId(void)
+{
+	return LoRaLinkCtx.LoRaLinkPanId;
+}
+
+uint8_t LoRaLinkGetMaxPayloadLength(void)
+{
+	return GetMaxPayloadLength( LoRaLinkCtx.TxConfig.SFValue );
+}
+
+static uint8_t GetMaxPayloadLength( uint8_t sfValue )
+{
+	if ( LoRaLinkCtx.LoRaLinkDwelltime == DWELLTIME_0 )
+	    {
+	    	return MaxPayloadDwell0[ SF_12 - sfValue ];
+	    }
+	    else
+	    {
+	    	return MaxPayloadDwell1[ SF_12 - sfValue ];
+	    }
+}
+
+static uint32_t GetBandwidth( uint8_t sfValue )
+{
+    switch( Bandwidths[SF_12 - sfValue] )
     {
         default:
         case 125000:
@@ -544,7 +653,7 @@ static void CalcBackOffTime( void )
 		TimerTime_t elapsed = TimerGetElapsedTime(LoRaLinkCtx.LastTxDoneTime);
 		TimerTime_t backoff = LoRaLinkCtx.TxTimeOnAir * 100 / LoRaLinkCtx.TxConfig.DutyCycle - LoRaLinkCtx.TxTimeOnAir;
 
-		if ( elapsed >= backoff )
+		if ( elapsed >= backoff || elapsed == 0 )
 		{
 			LoRaLinkCtx.BackoffTime = 0;
 		}
@@ -591,54 +700,21 @@ static void LoRaLinkHandleIrqEvents( void )
         {
             ProcessRadioRxTimeout( );
         }
+        if ( events.Events.TxDelaied == 1 )
+        {
+        	ProcessRadioTxDelaied( );
+        }
     }
 }
 
-/*
-static void LoRaLinkDeviceHandleIrqEvents( void )
-{
-	LoRaLinkRadioEvents_t events;
-
-    CRITICAL_SECTION_BEGIN( );
-    events = LoRaLinkRadioEventsStatus;
-    LoRaLinkRadioEventsStatus.Value = 0;
-    CRITICAL_SECTION_END( );
-
-    if( events.Value != 0 )
-    {
-        if( events.Events.TxDone == 1 )
-        {
-            ProcessDeviceRadioTxDone( );
-        }
-        if( events.Events.RxDone == 1 )
-        {
-            ProcessRadioRxDone( );
-        }
-        if( events.Events.TxTimeout == 1 )
-        {
-            ProcessDeviceRadioTxTimeout( );
-        }
-        if( events.Events.RxError == 1 )
-        {
-            ProcessDeviceRadioRxError( );
-        }
-        if( events.Events.RxTimeout == 1 )
-        {
-            ProcessDeviceRadioRxTimeout( );
-        }
-    }
-}*/
 
 /*
  * Interrupt callbacks for Modem
  */
 static void ProcessRadioTxDone( void )
 {
+	SX1276SetSleep();
 	LoRaLinkCtx.LastTxDoneTime = TxDoneParams.CurTime;
-
-	// Create Response Ok API
-
-
 	DeviceStatus = DEVICE_STATE_TX_DONE;
 
 }
@@ -647,8 +723,9 @@ static void ProcessRadioRxDone( void )
 {
 	SX1276SetSleep();
 	LoRaLinkApiGetRxData( &LoRaLinkPacket, &RxDoneParams );
-//	if ( LoRaLinkPacket.PanId == LoRaLinkCtx.LoRaLinkPanId && LoRaLinkPacket.DestAddr == LoRaLinkCtx.LoRaLinkDeviceAddr)
-	{
+	if ( ( LoRaLinkPacket.PanId == LoRaLinkCtx.LoRaLinkPanId ) &&
+	   ( ( LoRaLinkPacket.DestAddr == LoRaLinkCtx.LoRaLinkDeviceAddr) || ( LoRaLinkPacket.DestAddr == LORALINK_MULTICAST_ADDR ) ) )
+	   {
 		if ( LoRaLinkCryptoUnsecureMessage(&LoRaLinkPacket) == LORALINK_CRYPTO_SUCCESS )
 		{
 			DeviceStatus = DEVICE_STATE_RX_DONE;
@@ -667,7 +744,7 @@ static void ProcessRadioRxTimeout( void )
 static void ProcessRadioTxTimeout( void )
 {
 	SX1276SetSleep();
-	DeviceStatus = DEVICE_STATE_TX_DONE;
+	DeviceStatus = DEVICE_STATE_TX_TIMEOUT;
 }
 
 static void ProcessRadioRxError( void )
@@ -676,42 +753,13 @@ static void ProcessRadioRxError( void )
 	DeviceStatus = DEVICE_STATE_RX_ERROR;
 }
 
-/*
- * Interrupt callbacks for Device
- */
-/*
-static void ProcessDeviceRadioRxDone( void )
+static void ProcessRadioTxDelaied( void )
 {
 	SX1276SetSleep();
-	LoRaLinkApiGetRxData( &LoRaLinkCtx.TxMsg, &RxDoneParams );
-	DeviceStatus = DEVICE_STATE_RX_DONE;
+	LoRaLinkCtx.BackoffTime = 0;
+	DeviceStatus = DEVICE_STATE_TX;
 }
 
-
-static void ProcessDeviceRadioTxDone( void )
-{
-	SX1276SetSleep();
-	DeviceStatus = DEVICE_STATE_TX_DONE;
-}
-
-static void ProcessDeviceRadioRxTimeout( void )
-{
-	SX1276SetSleep();
-	DeviceStatus = DEVICE_STATE_RX_TIMEOUT;
-}
-
-static void ProcessDeviceRadioTxTimeout( void )
-{
-	SX1276SetSleep();
-	DeviceStatus = DEVICE_STATE_TX_TIMEOUT;
-}
-
-static void ProcessDeviceRadioRxError( void )
-{
-	SX1276SetSleep();
-	DeviceStatus = DEVICE_STATE_RX_ERROR;
-}
-*/
 
 /*
  * Radio Interrupt callbacks
@@ -777,6 +825,13 @@ static void OnRadioRxTimeout( void )
 
 static void OnTxDelayedTimerEvent( void *context )
 {
-	LoRaLinkCtx.BackoffTime = 0;
-	DeviceStatus = DEVICE_STATE_TX;
+//	LoRaLinkCtx.BackoffTime = 0;
+//	DeviceStatus = DEVICE_STATE_TX;
+
+	LoRaLinkRadioEventsStatus.Events.TxDelaied = 1;
+
+    if( LoRaLinkCtx.LinkProcessNotify != NULL )
+    {
+        LoRaLinkCtx.LinkProcessNotify( );
+    }
 }

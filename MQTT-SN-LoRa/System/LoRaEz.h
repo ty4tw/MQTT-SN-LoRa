@@ -18,6 +18,9 @@
 #include "device-config.h"
 #include "LoRaLink.h"
 #include "LoRaLinkCrypto.h"
+#include "Payload.h"
+#include "Peripheral.h"
+#include "utilities.h"
 
 
 #endif /* _LORAEZ_H_ */

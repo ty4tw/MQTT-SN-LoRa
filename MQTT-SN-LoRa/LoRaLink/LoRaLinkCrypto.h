@@ -1,10 +1,11 @@
 /*
  * LoRaLinkCrypt.h
  *
- *  Created on: 2020/06/14
- *      Author: tomoaki
- */
-
+ * copyright Revised BSD License, see section \ref LICENSE
+ *
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
+ *
+ **************************************************************************************/
 #ifndef LORALINKCRYPTO_H_
 #define LORALINKCRYPTO_H_
 
@@ -114,6 +115,6 @@ typedef struct
 
 LoRaLinkCryptoStatus_t LoRaLinkCryptoSecureMessage(LoRaLinkPacket_t* packet);
 LoRaLinkCryptoStatus_t LoRaLinkCryptoUnsecureMessage( LoRaLinkPacket_t* packet );
-void LoRaLinkCryptoSetKey(uint8_t* key);
+void LoRaLinkCryptoSetKey( uint8_t* key );
 
 #endif /* LORALINKCRYPTO_H_ */

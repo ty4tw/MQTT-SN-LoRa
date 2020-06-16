@@ -1,6 +1,6 @@
  /**************************************************************************************
  *
- * LoRaLink.c
+ * LoRaLinkApi.c
  *
  * copyright Revised BSD License, see section \ref LICENSE
  *
@@ -24,8 +24,9 @@
 
 static uint8_t UartGetByte( uint8_t* buf );
 static void UartPutByte( uint8_t c );
-static void LoRaLinkApiWrite( LoRaLinkApiType_t api, LoRaLinkPacket_t* pkt );
 
+extern uint8_t LoRaLinkGetSourceAddr(void);
+extern uint16_t LoRaLinkGetPanId(void);
 
 void LoRaLinkApiGetRxData( LoRaLinkPacket_t* pkt, RxDoneParams_t* rxDonePara )
 {
@@ -38,21 +39,22 @@ void LoRaLinkApiGetRxData( LoRaLinkPacket_t* pkt, RxDoneParams_t* rxDonePara )
     pos += 2;
     pkt->DestAddr = *pos++;
     pkt->SourceAddr = *pos++;
+    pkt->FRMPayloadType = *pos++;
     pkt->FRMPayload = pos;
     pkt->FRMPayloadSize = rxDonePara->Size - LORALINK_HDR_LEN - LORALINK_MIC_LEN;
-	pkt->Rssi = rxDonePara->Rssi;
-	pkt->Snr = rxDonePara->Snr;
 
-	pos += pkt->FRMPayloadSize;
-	pkt->MIC = getUint32(pos);
+	pkt->MIC = getUint32(pos + pkt->FRMPayloadSize);
+
+    pkt->Rssi = rxDonePara->Rssi;
+	pkt->Snr = rxDonePara->Snr;
 }
 
-static void LoRaLinkApiWrite( LoRaLinkApiType_t api, LoRaLinkPacket_t* pkt )
+void LoRaLinkApiWrite( LoRaLinkPacket_t* pkt )
 {
 	uint8_t buf[4] = { 0 };
 	uint8_t* pos = 0;
 	uint8_t chks = 0;
-	uint16_t len = pkt->FRMPayloadSize + LORALINK_HDR_LEN + LORALINK_MIC_LEN + 2;  // 1:CRC
+	uint16_t len = pkt->FRMPayloadSize + 7;  //  = DestAddr[1] + Rssi[2] + Snr[2] + PayloadType[1] + Crc[1]
 
 	UartPutByte(FRAME_DLMT);
 
@@ -60,17 +62,8 @@ static void LoRaLinkApiWrite( LoRaLinkApiType_t api, LoRaLinkPacket_t* pkt )
 	UartPutByte(buf[0]);
 	UartPutByte(buf[1]);
 
-	UartPutByte(api);
-
-	setUint16(buf, pkt->PanId);
-	UartPutByte(buf[0]);
-	UartPutByte(buf[1]);
-	chks += buf[0] + buf[1];
-
-	UartPutByte( pkt->DestAddr);
-	chks += pkt->DestAddr;
 	UartPutByte(pkt->SourceAddr);
-	chks += pkt->SourceAddr;
+	chks = pkt->SourceAddr;
 
 	setUint16(buf, pkt->Rssi);
 	UartPutByte(buf[0]);
@@ -82,6 +75,9 @@ static void LoRaLinkApiWrite( LoRaLinkApiType_t api, LoRaLinkPacket_t* pkt )
 	UartPutByte(buf[1]);
 	chks += buf[0] + buf[1];
 
+	UartPutByte( pkt->FRMPayloadType);
+	chks += pkt->FRMPayloadType;
+
 	pos = pkt->FRMPayload;
 	for( uint8_t i = 0; i < pkt->FRMPayloadSize; i++ )
 	{
@@ -89,33 +85,22 @@ static void LoRaLinkApiWrite( LoRaLinkApiType_t api, LoRaLinkPacket_t* pkt )
 		chks += *pos++;
 	}
 
-	setUint32( buf, pkt->MIC);
-	chks += buf[0] + buf[1] + buf[2] + buf[3];
-
 	UartPutByte(0xff - chks);  // CRC
 }
 
-void LoRaLinkApiPutRecvData(LoRaLinkPacket_t* pkt)
+
+void LoRaLinkApiSetTxData( LoRaLinkPacket_t* pkt, LoRaLinkApi_t* api )
 {
-	LoRaLinkApiWrite(API_RX_DATA, pkt);
+	pkt->PanId = api->PanId;
+	pkt->DestAddr = api->DestinationAddr;
+	pkt->SourceAddr = api->SourceAddr;
+	pkt->FRMPayloadType = api->PayloadType;
+	pkt->FRMPayload = api->Payload;
+	pkt->FRMPayloadSize = api->PayloadLen;
+
+	LoRaLinkSetTxData(pkt);
 }
 
-void LoRaLinkApiPutSendResp(LoRaLinkPacket_t* pkt)
-{
-	LoRaLinkApiWrite(API_TX_RESP, pkt);
-}
-
-
-void LoRaLinkApiSetTxData( LoRaLinkPacket_t* LoRaLinkPkt, LoRaLinkApi_t* LoRaLinkApi )
-{
-	LoRaLinkPkt->PanId = LoRaLinkApi->PanId;
-	LoRaLinkPkt->DestAddr = LoRaLinkApi->DestinationAddr;
-	LoRaLinkPkt->SourceAddr = LoRaLinkApi->SourceAddr;
-	LoRaLinkPkt->FRMPayload = LoRaLinkApi->Payload;
-	LoRaLinkPkt->FRMPayloadSize = LoRaLinkApi->PayloadLen;
-
-	LoRaLinkSetTxData(LoRaLinkPkt);
-}
 
 
 bool LoRaLinkApiRead(LoRaLinkApi_t* api, LoRaLinkApiReadParameters_t* para)
@@ -148,44 +133,31 @@ bool LoRaLinkApiRead(LoRaLinkApi_t* api, LoRaLinkApiReadParameters_t* para)
 			break;
 
 		case 3:
-			api->ApiType = byte;
+			api->DestinationAddr = byte;
 			para->checksum = byte;
 			break;
 
 		case 4:
-			val = (uint16_t)byte;
-			api->PanId = val << 8;
-			para->checksum += byte;
-			break;
-
-		case 5:
-			api->PanId += byte;
-			para->checksum += byte;
-			break;
-
-		case 6:
-			api->DestinationAddr = byte;
-			para->checksum += byte;
-			break;
-
-		case 7:
-			api->SourceAddr = byte;
+			api->PayloadType = byte;
 			para->checksum += byte;
 			break;
 
 		default:
-			if ( para->apipos >= api->PayloadLen + 2 )
+			if ( para->apipos >= api->PayloadLen + 2 )    //  FRM_DEL + CRC = 2
 			{
 				para->Error = ( (0xff - para->checksum) != byte );
 				para->Available = true;
-				api->PayloadLen -= 6;
 				para->apipos = 0;
+				para->checksum = 0;
+				api->PayloadLen -= 3;   // 3 = DestAddr[1] + PlType[1] + Crc[1]
+				api->SourceAddr = LoRaLinkGetSourceAddr();
+				api->PanId = LoRaLinkGetPanId();
 				return true;
 			}
 			else
 			{
+				api->Payload[para->apipos - 5] = byte;
 				para->checksum += byte;
-				api->Payload[para->apipos - 8] = byte;
 			}
 			break;
 		}

@@ -22,20 +22,25 @@
 
 typedef enum
 {
-	API_RX_DATA = 0x80,
-	API_TX_DATA = 0x40,
-	API_TX_RESP = 0x42,
-}LoRaLinkApiType_t;
+	MQTT_SN        = 0x40,
+	API_RSP_ACK    = 0x80,
+	API_RSP_NFC,
+	API_RSP_TOT,
+	API_REQ_UTC,
+	API_RSP_UTC,
+	API_CHG_TASK_PARAM,
+	API_REQ_RESET,
+
+}LoRaLinkPayloadType_t;
 
 /*!
- * LoRaLink Device Type
+ * LoRaLink Modem Type
  */
 typedef enum
 {
-	LORALINK_DEVICE,
-	LORALINK_MODEM_TX,
-	LORALINK_MODEM_RX,
-}LoRaLinkDeviceType_t;
+	LORALINK_UART_TX,
+	LORALINK_UART_RX,
+}LoRaLinkUartType_t;
 
 /*!
  * LoRaLink Spreading Factor
@@ -74,20 +79,10 @@ typedef enum
 	DEVICE_STATE_TX_TIMEOUT,
 	DEVICE_STATE_CYCLE,
 	DEVICE_STATE_SLEEP,
+	DEVICE_STATE_TX_NO_FREE_CH,
 	DEVICE_STATE_RX_ERROR,
 } LoRaLinkDeviceStatus_t;
 
-/*!
- * LoRaLink receive window enumeration
- */
-/*
-typedef enum
-{
-	RX_SLOT_WIN,
-	RX_SLOT_WIN_CONTINUOUS,
-	RX_SLOT_NONE,
-} LoRaLinkRxSlot_t;
-*/
 
 /*!
  * Parameter structure for the function SetRxConfig.
@@ -167,12 +162,15 @@ typedef struct
 /*!
  * LoRaLink Packet format
  */
-//#define LORALINK_PACKET_OVERHEAD  (4)   // PanId + DestAddr + SourceAddr
-#define LORALINK_MIC_FIELD_SIZE     (4)
-#define LORALINK_MAX_API_LEN     ( LORA_PHY_MAXPAYLOAD + 5 )  // ApiType(1) + Rssi(2) + Snr(2)
+#define LORALINK_MAX_API_LEN     ( LORA_PHY_MAXPAYLOAD + 5 )  // PayloadType(1) + Rssi(2) + Snr(2)
 
-#define LORALINK_HDR_LEN  (4)
+#define LORALINK_HDR_LEN  (5)     // PanId(2) + DestAddr(1) + SrcAddr(1) + FRMPayloadType(1)
 #define LORALINK_MIC_LEN  (4)
+
+/*!
+ * LoRaLink Packet format
+ */
+#define LORALINK_MULTICAST_ADDR    0xFF
 
 typedef struct
 {
@@ -184,10 +182,6 @@ typedef struct
 	 * Size of serialized message buffer
 	 */
 	uint8_t BufSize;
-	/*!
-	 * API Type
-	 */
-	uint8_t ApiType;
 	/*!
 	 * PAN ID
 	 */
@@ -209,6 +203,10 @@ typedef struct
 	 */
 	uint16_t Snr;
 	/*!
+	 * Data Type
+	 */
+	uint8_t FRMPayloadType;
+	/*!
 	 * Frame payload
 	 */
 	uint8_t* FRMPayload;
@@ -221,6 +219,7 @@ typedef struct
 	 */
 	uint32_t MIC;
 } LoRaLinkPacket_t;
+
 
 typedef struct
 {
@@ -239,7 +238,7 @@ typedef struct
 	/*
 	 * Buffer containing the upper layer data.
 	 */
-	uint8_t RxPayload[LORA_PHY_MAXPAYLOAD];
+//	uint8_t RxPayload[LORA_PHY_MAXPAYLOAD];
 
 	SysTime_t LastTxSysTime;
 	/*
@@ -295,7 +294,6 @@ typedef struct
 	 * Device Address
 	 */
 	uint8_t LoRaLinkDeviceAddr;
-
 } LoRaLinkCtx_t;
 
 /*!
@@ -308,7 +306,7 @@ typedef enum
      */
     LORALINK_STATUS_OK,
     /*!
-     * Service not started - LoRaMAC is busy
+     * Service not started - LoRaLink is busy
      */
     LORALINK_STATUS_BUSY,
     /*!
@@ -332,9 +330,13 @@ typedef enum
      */
     LORALINK_STATUS_LENGTH_ERROR,
     /*!
-     *
+     *  Service not started - LBT ch is busy
      */
     LORALINK_STATUS_CHANNEL_NOT_FREE,
+	/*!
+	 *
+	 */
+	LORALINK_STATUS_TX_TIMEOUT,
 	/*!
 	 *
 	 */
@@ -354,10 +356,10 @@ typedef enum
  */
 typedef struct
 {
-	uint8_t   ApiType;
 	uint16_t  PanId;
 	uint8_t   DestinationAddr;
 	uint8_t   SourceAddr;
+	uint8_t   PayloadType;
 	uint8_t   Payload[LORA_PHY_MAXPAYLOAD];
 	uint16_t  PayloadLen;
 }LoRaLinkApi_t;

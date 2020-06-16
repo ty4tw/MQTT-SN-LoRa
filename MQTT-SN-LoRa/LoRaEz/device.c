@@ -42,6 +42,7 @@
 #define PDDADC_VREF_BANDGAP                             1224 // VREFINT out 1.224[V]
 #define PDDADC_MAX_VALUE                                4095
 #define VREFINT_CAL_ADDR                            ((uint16_t*)(uint32_t)0x1FF80078)
+
 /*!
  * Battery level ratio (battery dependent)
  */

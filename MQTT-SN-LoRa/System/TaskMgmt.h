@@ -1,10 +1,11 @@
 /*!
  * \file      TaskMgr.h
  *
- * \copyright Revised BSD License, see section \ref LICENSE
- * (C)2019 Tomy-Technology
- * \author  Tomoaki Yamaguch
- */
+ * copyright Revised BSD License, see section \ref LICENSE
+ *
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
+ *
+ **************************************************************************************/
 #ifndef LORA_APPCONTROL_H_
 #define LORA_APPCONTROL_H_
 
@@ -23,30 +24,12 @@ typedef struct
     uint32_t interval;
 } TaskList_t;
 
-/*
-typedef struct PortList
-{
-    uint8_t port;
-    void (*callback)(Payload_t* payload);
-} PortList_t;
-*/
 
-typedef struct
-{
-	const char* topic;
-	int (*pubCallback)(Payload_t*);
-	uint8_t qos;
-} OnPublishList_t;
 
 #define TASK_LIST   TaskList_t  theTaskList[]
 #define TASK(...)         {__VA_ARGS__}
 #define END_OF_TASK_LIST  {0, 0, 0}
 
-#ifndef SUBSCRIBE_LIST
-#define SUBSCRIBE_LIST    OnPublishList_t theOnPublishList[]
-#define SUB(...)          {__VA_ARGS__}
-#define END_OF_SUBSCRIBE_LIST {0,0,0}
-#endif
 
 void WaitMs(uint32_t milsecs);
 void WaitInt(uint32_t milsecs);
@@ -64,6 +47,9 @@ bool GetStateOfInt1(void);
  */
 void SetIntMode(PinNames port, IrqModes mode, PinTypes type);
 
-
+/*
+ * Print out Version
+ */
+void printVersion(void);
 
 #endif /* LORA_APPCONTROL_H_ */

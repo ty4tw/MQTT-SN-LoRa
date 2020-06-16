@@ -33,7 +33,7 @@
 #include <stdint.h>
 #include "stm32l0xx.h"
 
-extern uint8_t theTraceFlg;
+#define DEBUGLOG
 
 /*!
  * Generic definition
@@ -50,7 +50,16 @@ extern uint8_t theTraceFlg;
 /*!
  * DebugLog
  */
-#define TracePrintf(...)    if( theTraceFlg == 1 ){ printf(__VA_ARGS__); }
+#ifdef DEBUGLOG
+#define DLOG(...)            printf( __VA_ARGS__ )
+#define DLOG_MSG(...)        printf( "%s %d %s\r\n", __func__, __LINE__, __VA_ARGS__ )
+#define DLOG_INT(...)        printf( "%s %d %d\r\n", __func__, __LINE__, __VA_ARGS__ )
+#define DLOG_MSG_INT(...)    printf( "%s %d  %s %d\r\n", __func__, __LINE__, __VA_ARGS__ )
+#else
+#define DLOG_MSG(...)
+#define DLOG_INT(...)
+#define DLOG_MSG_INT(...)
+#endif
 
 
 /*!

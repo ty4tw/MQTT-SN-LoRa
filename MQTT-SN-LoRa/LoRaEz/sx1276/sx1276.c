@@ -22,14 +22,12 @@
  *
  * \author    Wael Guibene ( Semtech )
  */
-#include "sx1276/sx1276.h"
+#include "sx1276.h"
 #include <string.h>
 #include <math.h>
 #include "delay.h"
 #include "timer.h"
 #include "device-config.h"
-#include "sx1276/radio.h"
-#include "sx1276-device.h"
 #include "sx1276-device.h"
 #include "utilities.h"
 
@@ -217,7 +215,7 @@ DioIrqHandler *DioIrq[] = { SX1276OnDio0Irq, SX1276OnDio1Irq,
  */
 TimerEvent_t TxTimeoutTimer;
 TimerEvent_t RxTimeoutTimer;
-TimerEvent_t RxTimeoutSyncWord;
+//TimerEvent_t RxTimeoutSyncWord;
 
 void SX1276StopTxTimeoutTimer(void)
 {
@@ -231,7 +229,7 @@ void SX1276StopRxTimeoutTimer(void)
 
 void SX1276StopRxTimeoutSyncWord(void)
 {
-	TimerStop( &RxTimeoutSyncWord );
+//	TimerStop( &RxTimeoutSyncWord );
 }
 
 /*
@@ -247,7 +245,7 @@ void SX1276Init( RadioEvents_t *events )
     // Initialize driver timeout timers
     TimerInit( &TxTimeoutTimer, SX1276OnTimeoutIrq );
     TimerInit( &RxTimeoutTimer, SX1276OnTimeoutIrq );
-    TimerInit( &RxTimeoutSyncWord, SX1276OnTimeoutIrq );
+//    TimerInit( &RxTimeoutSyncWord, SX1276OnTimeoutIrq );
 
     SX1276Reset( );
 
@@ -303,7 +301,6 @@ static uint8_t GetFskBandwidthRegValue( uint32_t bandwidth )
     while( 1 );
 }
 
-/*
 bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh, uint32_t maxCarrierSenseTime )
 {
     bool status = true;
@@ -312,44 +309,6 @@ bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh
 
     if( SX1276GetStatus( ) != RF_IDLE )
     {
-        return false;
-    }
-
-    SX1276SetModem( modem );
-
-    SX1276SetChannel( freq );
-
-    SX1276SetOpMode( RF_OPMODE_RECEIVER );
-
-    DelayMs( 1 );
-
-    carrierSenseTime = TimerGetCurrentTime( );
-
-    // Perform carrier sense for maxCarrierSenseTime
-    while( TimerGetElapsedTime( carrierSenseTime ) < maxCarrierSenseTime )
-    {
-        rssi = SX1276ReadRssi( modem );
-
-        if( rssi > rssiThresh )
-        {
-            status = false;
-            break;
-        }
-    }
-    SX1276SetSleep( );
-    return status;
-}
-*/
-
-bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh, uint32_t maxCarrierSenseTime )
-{
-    bool status = true;
-    int16_t rssi = 0;
-    uint32_t carrierSenseTime = 0;
-
-    if( SX1276GetStatus( ) != RF_IDLE )
-    {
-    	TracePrintf("Radio is not IDLE.\r\n");
         return false;
     }
 
@@ -379,8 +338,6 @@ bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh
             break;
         }
     }
-
-    //TracePrintf("Rssi: %d\r\n", rssi);
 
     SX1276SetSleep( );
     return status;
@@ -922,7 +879,7 @@ void SX1276SetSleep( void )
 {
     TimerStop( &RxTimeoutTimer );
     TimerStop( &TxTimeoutTimer );
-    TimerStop( &RxTimeoutSyncWord );
+//    TimerStop( &RxTimeoutSyncWord );
 
     SX1276SetOpMode( RF_OPMODE_SLEEP );
 
@@ -936,7 +893,7 @@ void SX1276SetStby( void )
 {
     TimerStop( &RxTimeoutTimer );
     TimerStop( &TxTimeoutTimer );
-    TimerStop( &RxTimeoutSyncWord );
+//    TimerStop( &RxTimeoutSyncWord );
 
     SX1276SetOpMode( RF_OPMODE_STANDBY );
     SX1276.Settings.State = RF_IDLE;
@@ -950,37 +907,8 @@ void SX1276SetRx( uint32_t timeout )
     switch( SX1276.Settings.Modem )
     {
     case MODEM_FSK:
-        /*{
-            rxContinuous = SX1276.Settings.Fsk.RxContinuous;
+       break;
 
-            // DIO0=PayloadReady
-            // DIO1=FifoLevel
-            // DIO2=SyncAddr
-            // DIO3=FifoEmpty
-            // DIO4=Preamble
-            // DIO5=ModeReady
-            SX1276Write( REG_DIOMAPPING1, ( SX1276Read( REG_DIOMAPPING1 ) & RF_DIOMAPPING1_DIO0_MASK &
-                                                                            RF_DIOMAPPING1_DIO1_MASK &
-                                                                            RF_DIOMAPPING1_DIO2_MASK ) |
-                                                                            RF_DIOMAPPING1_DIO0_00 |
-                                                                            RF_DIOMAPPING1_DIO1_00 |
-                                                                            RF_DIOMAPPING1_DIO2_11 );
-
-            SX1276Write( REG_DIOMAPPING2, ( SX1276Read( REG_DIOMAPPING2 ) & RF_DIOMAPPING2_DIO4_MASK &
-                                                                            RF_DIOMAPPING2_MAP_MASK ) |
-                                                                            RF_DIOMAPPING2_DIO4_11 |
-                                                                            RF_DIOMAPPING2_MAP_PREAMBLEDETECT );
-
-            SX1276.Settings.FskPacketHandler.FifoThresh = SX1276Read( REG_FIFOTHRESH ) & 0x3F;
-
-            SX1276Write( REG_RXCONFIG, RF_RXCONFIG_AFCAUTO_ON | RF_RXCONFIG_AGCAUTO_ON | RF_RXCONFIG_RXTRIGER_PREAMBLEDETECT );
-
-            SX1276.Settings.FskPacketHandler.PreambleDetected = false;
-            SX1276.Settings.FskPacketHandler.SyncWordDetected = false;
-            SX1276.Settings.FskPacketHandler.NbBytes = 0;
-            SX1276.Settings.FskPacketHandler.Size = 0;
-        }*/
-        break;
     case MODEM_LORA:
         {
             if( SX1276.Settings.LoRa.IqInverted == true )
@@ -1080,30 +1008,21 @@ void SX1276SetRx( uint32_t timeout )
     memset( RxTxBuffer, 0, ( size_t )RX_BUFFER_SIZE );
 
     SX1276.Settings.State = RF_RX_RUNNING;
-    if( timeout != 0 )
+
+    if( timeout > 0 )
     {
         TimerSetValue( &RxTimeoutTimer, timeout );
         TimerStart( &RxTimeoutTimer );
     }
 
-/*    if( SX1276.Settings.Modem == MODEM_FSK )
-    {
-        SX1276SetOpMode( RF_OPMODE_RECEIVER );
-
-        TimerSetValue( &RxTimeoutSyncWord, SX1276.Settings.Fsk.RxSingleTimeout );
-        TimerStart( &RxTimeoutSyncWord );
-    }
-    else*/
-    {
-        if( rxContinuous == true )
-        {
-            SX1276SetOpMode( RFLR_OPMODE_RECEIVER );
-        }
-        else
-        {
-            SX1276SetOpMode( RFLR_OPMODE_RECEIVER_SINGLE );
-        }
-    }
+	if( rxContinuous == true )
+	{
+		SX1276SetOpMode( RFLR_OPMODE_RECEIVER );
+	}
+	else
+	{
+		SX1276SetOpMode( RFLR_OPMODE_RECEIVER_SINGLE );
+	}
 }
 
 void SX1276SetTx( uint32_t timeout )
@@ -1114,24 +1033,6 @@ void SX1276SetTx( uint32_t timeout )
 
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        {
-/*            // DIO0=PacketSent
-            // DIO1=FifoEmpty
-            // DIO2=FifoFull
-            // DIO3=FifoEmpty
-            // DIO4=LowBat
-            // DIO5=ModeReady
-            SX1276Write( REG_DIOMAPPING1, ( SX1276Read( REG_DIOMAPPING1 ) & RF_DIOMAPPING1_DIO0_MASK &
-                                                                            RF_DIOMAPPING1_DIO1_MASK &
-                                                                            RF_DIOMAPPING1_DIO2_MASK ) |
-                                                                            RF_DIOMAPPING1_DIO1_01 );
-
-            SX1276Write( REG_DIOMAPPING2, ( SX1276Read( REG_DIOMAPPING2 ) & RF_DIOMAPPING2_DIO4_MASK &
-                                                                            RF_DIOMAPPING2_MAP_MASK ) );
-            SX1276.Settings.FskPacketHandler.FifoThresh = SX1276Read( REG_FIFOTHRESH ) & 0x3F;
-      */  }
-        break;
     case MODEM_LORA:
         {
             if( SX1276.Settings.LoRa.FreqHopOn == true )
@@ -1164,6 +1065,9 @@ void SX1276SetTx( uint32_t timeout )
             }
         }
         break;
+
+    default:
+    	break;
     }
 
     SX1276.Settings.State = RF_TX_RUNNING;
@@ -1175,11 +1079,6 @@ void SX1276StartCad( void )
 {
     switch( SX1276.Settings.Modem )
     {
-    case MODEM_FSK:
-        {
-
-        }
-        break;
     case MODEM_LORA:
         {
             SX1276Write( REG_LR_IRQFLAGSMASK, RFLR_IRQFLAGS_RXTIMEOUT |
@@ -1199,6 +1098,7 @@ void SX1276StartCad( void )
             SX1276SetOpMode( RFLR_OPMODE_CAD );
         }
         break;
+
     default:
         break;
     }
@@ -1233,6 +1133,7 @@ int16_t SX1276ReadRssi( RadioModems_t modem )
     case MODEM_FSK:
         rssi = -( SX1276Read( REG_RSSIVALUE ) >> 1 );
         break;
+
     case MODEM_LORA:
         if( SX1276.Settings.Channel > RF_MID_BAND_THRESH )
         {
@@ -1396,24 +1297,6 @@ void SX1276SetMaxPayloadLength( RadioModems_t modem, uint8_t max )
     }
 }
 
-/*
-void SX1276SetPublicNetwork( bool enable )
-{
-    SX1276SetModem( MODEM_LORA );
-    SX1276.Settings.LoRa.PublicNetwork = enable;
-    if( enable == true )
-    {
-        // Change LoRa modem SyncWord
-        SX1276Write( REG_LR_SYNCWORD, LORA_MAC_PUBLIC_SYNCWORD );
-    }
-    else
-    {
-        // Change LoRa modem SyncWord
-        SX1276Write( REG_LR_SYNCWORD, LORA_MAC_PRIVATE_SYNCWORD );
-    }
-}
-*/
-
 void SX1276SetSyncword( uint8_t syncword )
 {
 	SX1276SetModem( MODEM_LORA );
@@ -1454,12 +1337,12 @@ void SX1276OnTimeoutIrq( void* context )
             {
                 // Continuous mode restart Rx chain
                 SX1276Write( REG_RXCONFIG, SX1276Read( REG_RXCONFIG ) | RF_RXCONFIG_RESTARTRXWITHOUTPLLLOCK );
-                TimerStart( &RxTimeoutSyncWord );
+//                TimerStart( &RxTimeoutSyncWord );
             }
             else
             {
                 SX1276.Settings.State = RF_IDLE;
-                TimerStop( &RxTimeoutSyncWord );
+//                TimerStop( &RxTimeoutSyncWord );
             }
         }
         if( ( RadioEvents != NULL ) && ( RadioEvents->RxTimeout != NULL ) )
@@ -1515,8 +1398,6 @@ void SX1276OnDio0Irq( void* context )
     switch( SX1276.Settings.State )
     {
         case RF_RX_RUNNING:
-            //TimerStop( &RxTimeoutTimer );
-            // RxDone interrupt
             switch( SX1276.Settings.Modem )
             {
             case MODEM_FSK:
@@ -1535,14 +1416,14 @@ void SX1276OnDio0Irq( void* context )
 
                         if( SX1276.Settings.Fsk.RxContinuous == false )
                         {
-                            TimerStop( &RxTimeoutSyncWord );
+//                            TimerStop( &RxTimeoutSyncWord );
                             SX1276.Settings.State = RF_IDLE;
                         }
                         else
                         {
                             // Continuous mode restart Rx chain
                             SX1276Write( REG_RXCONFIG, SX1276Read( REG_RXCONFIG ) | RF_RXCONFIG_RESTARTRXWITHOUTPLLLOCK );
-                            TimerStart( &RxTimeoutSyncWord );
+//                            TimerStart( &RxTimeoutSyncWord );
                         }
 
                         if( ( RadioEvents != NULL ) && ( RadioEvents->RxError != NULL ) )
@@ -1582,13 +1463,13 @@ void SX1276OnDio0Irq( void* context )
                 if( SX1276.Settings.Fsk.RxContinuous == false )
                 {
                     SX1276.Settings.State = RF_IDLE;
-                    TimerStop( &RxTimeoutSyncWord );
+//                    TimerStop( &RxTimeoutSyncWord );
                 }
                 else
                 {
                     // Continuous mode restart Rx chain
                     SX1276Write( REG_RXCONFIG, SX1276Read( REG_RXCONFIG ) | RF_RXCONFIG_RESTARTRXWITHOUTPLLLOCK );
-                    TimerStart( &RxTimeoutSyncWord );
+//                    TimerStart( &RxTimeoutSyncWord );
                 }
 
                 if( ( RadioEvents != NULL ) && ( RadioEvents->RxDone != NULL ) )
@@ -1674,7 +1555,6 @@ void SX1276OnDio0Irq( void* context )
             }
             break;
         case RF_TX_RUNNING:
-            TimerStop( &TxTimeoutTimer );
             // TxDone interrupt
             switch( SX1276.Settings.Modem )
             {
@@ -1683,16 +1563,18 @@ void SX1276OnDio0Irq( void* context )
                 SX1276Write( REG_LR_IRQFLAGS, RFLR_IRQFLAGS_TXDONE );
                 // Intentional fall through
             case MODEM_FSK:
-            default:
                 SX1276.Settings.State = RF_IDLE;
                 if( ( RadioEvents != NULL ) && ( RadioEvents->TxDone != NULL ) )
                 {
                     RadioEvents->TxDone( );
                 }
                 break;
+            default:
+            	break;
             }
             break;
         default:
+			SX1276SetSleep();
             break;
     }
 }
@@ -1706,7 +1588,7 @@ void SX1276OnDio1Irq( void* context )
             {
             case MODEM_FSK:
                 // Stop timer
-                TimerStop( &RxTimeoutSyncWord );
+//                TimerStop( &RxTimeoutSyncWord );
 
                 // FifoLevel interrupt
                 // Read received packet size
@@ -1800,7 +1682,7 @@ void SX1276OnDio2Irq( void* context )
 
                 if( ( SX1276.Settings.FskPacketHandler.PreambleDetected == true ) && ( SX1276.Settings.FskPacketHandler.SyncWordDetected == false ) )
                 {
-                    TimerStop( &RxTimeoutSyncWord );
+//                    TimerStop( &RxTimeoutSyncWord );
 
                     SX1276.Settings.FskPacketHandler.SyncWordDetected = true;
 

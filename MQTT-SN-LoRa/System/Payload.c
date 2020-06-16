@@ -1,12 +1,11 @@
 /*!
  * \file      Payload.c
  *
- * \brief     Payload implementation
+ * copyright Revised BSD License, see section \ref LICENSE
  *
- * \copyright Revised BSD License, see section \ref LICENSE.
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
  *
- * \author  Tomoaki Yamaguch
- */
+ **************************************************************************************/
 #include "Payload.h"
 #include <stdio.h>
 #include <string.h>
@@ -104,7 +103,7 @@ static void Pl_setByte(Payload_t* pl, uint8_t* data, uint8_t len)
     return;
 
 err_exit:
-    TracePrintf("Payload over flow\r\n\r\n");
+    DLOG_MSG("Payload over flow\r\n\r\n");
     return;
 }
 
@@ -382,4 +381,7 @@ void SetRowdataToPayload(Payload_t* pl, uint8_t* data, uint8_t length)
 	pl->Length = length;
 }
 
-
+uint8_t GetRowdaataLength( Payload_t* pl )
+{
+	return pl->Length;
+}

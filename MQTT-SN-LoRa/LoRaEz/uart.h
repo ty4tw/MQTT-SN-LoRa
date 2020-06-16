@@ -162,7 +162,14 @@ uint8_t UartPutChar( uint8_t data );
  * \retval status     [0: OK, 1: Busy]
  */
 uint8_t UartPutBuffer( uint8_t *buffer, uint16_t size );
-
+/*!
+ * \brief Sends a character to the UART
+ *
+ * \param [IN] obj  UART object
+ * \param [IN] data  Received character
+ * \retval status    [0: OK, 1: Busy]
+ */
+uint8_t UartMcuPutChar( Uart_t *obj, uint8_t data );
 /*!
  * \brief Sends a buffer to the UART
  *

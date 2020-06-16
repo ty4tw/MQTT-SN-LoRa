@@ -1,12 +1,11 @@
 /*!
  * \file      Peripheral.c
  *
- * \brief     Device IO implementation
+ * copyright Revised BSD License, see section \ref LICENSE
  *
- * \copyright Revised BSD License, see section \ref LICENSE.
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
  *
- * \author  Tomoaki Yamaguch
- */
+ **************************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include "Peripheral.h"

@@ -21,6 +21,7 @@
  * \author    Gregory Cristian ( Semtech )
  */
 #include "delay.h"
+#include "stm32l0xx.h"
 
 void Delay( float s )
 {

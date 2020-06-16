@@ -26,11 +26,11 @@ typedef struct
 
 
 bool LoRaLinkApiRead(LoRaLinkApi_t* api, LoRaLinkApiReadParameters_t* para);
-void LoRaLinkApiSerializeData( LoRaLinkApiType_t api, LoRaLinkPacket_t* pkt );
+void LoRaLinkApiSerializeData( LoRaLinkPacket_t* pkt );
 void LoRaLinkApiGetRxData( LoRaLinkPacket_t* pkt, RxDoneParams_t* rxDonePara );
 
 void LoRaLinkApiSetTxData( LoRaLinkPacket_t* pkt, LoRaLinkApi_t* LoRaLinkApi );
-
+void LoRaLinkApiWrite( LoRaLinkPacket_t* pkt );
 
 void LoRaLinkApiPutRecvData(LoRaLinkPacket_t* pkt);
 void LoRaLinkApiPutSendResp(LoRaLinkPacket_t* pkt);

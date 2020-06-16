@@ -1,11 +1,11 @@
 /*!
  * \file      Payload.h
  *
+ * copyright Revised BSD License, see section \ref LICENSE
  *
- * \copyright Revised BSD License, see section \ref LICENSE
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
  *
- * \author  Tomoaki Yamaguch
- */
+ **************************************************************************************/
 
 #ifndef APPCTRL_PAYLOAD_H_
 #define APPCTRL_PAYLOAD_H_
@@ -127,5 +127,16 @@ void    ResetPayload(Payload_t* pl);
  */
 void    ReacquirePayload(Payload_t* pl);
 
+/*!
+ *  \brief Set Rowdata into Payload.
+ *
+ *  \param [IN] pl         Payload
+ *  \param [IN] data       Rowdata
+ *  \param [IN] length     Size of Rowdata
+ *
+ */
+void SetRowdataToPayload(Payload_t* pl, uint8_t* data, uint8_t length);
+
+uint8_t GetRowdaataLength( Payload_t* pl );
 
 #endif /* APPCTRL_PAYLOAD_H_ */

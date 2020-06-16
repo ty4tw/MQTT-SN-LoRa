@@ -1,10 +1,11 @@
 /*!
  * \file      Peripheral.h
  *
- * \copyright Revised BSD License, see section \ref LICENSE.
+ * copyright Revised BSD License, see section \ref LICENSE
  *
- * \author  Tomoaki Yamaguch
- */
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
+ *
+ **************************************************************************************/
 #ifndef _PERIPHERAL_H_
 #define _PERIPHERAL_H_
 

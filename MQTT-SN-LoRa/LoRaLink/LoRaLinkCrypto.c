@@ -1,9 +1,12 @@
-/*
+/***************************************************************************************
+ *
  * LoRaLinkCrypto.c
  *
- *  Created on: 2020/06/14
- *      Author: tomoaki
- */
+ * copyright Revised BSD License, see section \ref LICENSE
+ *
+ * copyright (c) 2020, Tomoaki Yamaguchi   tomoaki@tomy-tech.com
+ *
+ **************************************************************************************/
 #include "LoRaLinkTypes.h"
 #include "LoRaLink.h"
 #include "LoRaLinkCrypto.h"
@@ -45,12 +48,12 @@ typedef struct sSecureElementNvCtx
 
 SecureElementNvCtx_t SeCtx;
 
-static LoRaLinkCryptoStatus_t PrepareB0( uint16_t msgLen, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t* b0 );
+static LoRaLinkCryptoStatus_t PrepareB0( uint16_t msgLen, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType, uint8_t* b0 );
 
 static SecureElementStatus_t SecureElementAesEncrypt( uint8_t* buffer, uint16_t size, Key_t* key, uint8_t* encBuffer );
-static LoRaLinkCryptoStatus_t ComputeCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint32_t* cmac );
-static LoRaLinkCryptoStatus_t VerifyCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint32_t cmac );
-static LoRaLinkCryptoStatus_t PayloadEncrypt( uint8_t* buffer, int16_t size, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr );
+static LoRaLinkCryptoStatus_t ComputeCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType, uint32_t* cmac );
+static LoRaLinkCryptoStatus_t VerifyCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType, uint32_t cmac );
+static LoRaLinkCryptoStatus_t PayloadEncrypt( uint8_t* buffer, int16_t size, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType );
 static SecureElementStatus_t SecureElementComputeAesCmac( uint8_t *micBxBuffer, uint8_t *buffer, uint16_t size, Key_t* key, uint32_t* cmac );
 static SecureElementStatus_t SecureElementVerifyAesCmac( uint8_t* buffer, uint16_t size, uint32_t expectedCmac, Key_t* keyID );
 
@@ -66,7 +69,7 @@ LoRaLinkCryptoStatus_t LoRaLinkCryptoSecureMessage(LoRaLinkPacket_t* packet)
         return LORALINK_CRYPTO_ERROR_NPE;
     }
 
-    if ( PayloadEncrypt( packet->FRMPayload, packet->FRMPayloadSize, &SeCtx.Key, packet->PanId, packet->DestAddr, packet->SourceAddr ) != LORALINK_CRYPTO_SUCCESS )
+    if ( PayloadEncrypt( packet->FRMPayload, packet->FRMPayloadSize, &SeCtx.Key, packet->PanId, packet->DestAddr, packet->SourceAddr, packet->FRMPayloadType ) != LORALINK_CRYPTO_SUCCESS )
 	{
 		return LORALINK_CRYPTO_ERROR;
 	}
@@ -77,7 +80,8 @@ LoRaLinkCryptoStatus_t LoRaLinkCryptoSecureMessage(LoRaLinkPacket_t* packet)
         return LORALINK_CRYPTO_ERROR_SERIALIZER;
     }
 
-    LoRaLinkCryptoStatus_t retval = ComputeCmacB0( packet->Buffer, ( packet->BufSize - LORALINK_MIC_FIELD_SIZE ), &SeCtx.Key, packet->PanId, packet->DestAddr, packet->SourceAddr, &packet->MIC );
+    LoRaLinkCryptoStatus_t retval = ComputeCmacB0( packet->Buffer, ( packet->BufSize - LORALINK_MIC_LEN ), &SeCtx.Key,
+    		                                       packet->PanId, packet->DestAddr, packet->SourceAddr, packet->FRMPayloadType, &packet->MIC );
 
     if ( retval != LORALINK_CRYPTO_SUCCESS )
     {
@@ -101,15 +105,16 @@ LoRaLinkCryptoStatus_t LoRaLinkCryptoUnsecureMessage( LoRaLinkPacket_t* packet )
     }
 
     // Verify mic
-    if ( VerifyCmacB0( packet->Buffer, ( packet->BufSize - LORALINK_MIC_FIELD_SIZE ),  &SeCtx.Key, packet->PanId, packet->DestAddr, packet->SourceAddr, packet->MIC ) != LORALINK_CRYPTO_SUCCESS )
+    if ( VerifyCmacB0( packet->Buffer, ( packet->BufSize - LORALINK_MIC_LEN ),  &SeCtx.Key,
+    		           packet->PanId, packet->DestAddr, packet->SourceAddr, packet->FRMPayloadType, packet->MIC ) != LORALINK_CRYPTO_SUCCESS )
     {
         return LORALINK_CRYPTO_ERROR;
     }
 
-    return PayloadEncrypt( packet->FRMPayload, packet->FRMPayloadSize, &SeCtx.Key, packet->PanId, packet->DestAddr, packet->SourceAddr );
+    return PayloadEncrypt( packet->FRMPayload, packet->FRMPayloadSize, &SeCtx.Key, packet->PanId, packet->DestAddr, packet->SourceAddr, packet->FRMPayloadType );
 }
 
-static LoRaLinkCryptoStatus_t PayloadEncrypt( uint8_t* buffer, int16_t size, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr )
+static LoRaLinkCryptoStatus_t PayloadEncrypt( uint8_t* buffer, int16_t size, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType )
 {
     if( buffer == NULL )
     {
@@ -117,7 +122,6 @@ static LoRaLinkCryptoStatus_t PayloadEncrypt( uint8_t* buffer, int16_t size, Key
     }
 
     uint8_t bufferIndex = 0;
-    uint16_t ctr = 1;
     uint8_t sBlock[16] = { 0 };
     uint8_t aBlock[16] = { 0 };
 
@@ -130,10 +134,10 @@ static LoRaLinkCryptoStatus_t PayloadEncrypt( uint8_t* buffer, int16_t size, Key
 
     aBlock[13] = srcAddr;
 
+    aBlock[15] = plType;;
+
     while( size > 0 )
     {
-        aBlock[15] = ctr & 0xFF;
-        ctr++;
         if( SecureElementAesEncrypt( aBlock, 16, key, sBlock ) != SECURE_ELEMENT_SUCCESS )
         {
             return LORALINK_CRYPTO_ERROR_SECURE_ELEMENT_FUNC;
@@ -179,7 +183,7 @@ static SecureElementStatus_t SecureElementAesEncrypt( uint8_t* buffer, uint16_t 
 }
 
 
-static LoRaLinkCryptoStatus_t ComputeCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint32_t* cmac )
+static LoRaLinkCryptoStatus_t ComputeCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType, uint32_t* cmac )
 {
     if( ( msg == NULL ) || ( cmac == NULL ) )
     {
@@ -193,7 +197,7 @@ static LoRaLinkCryptoStatus_t ComputeCmacB0( uint8_t* msg, uint16_t len, Key_t* 
     uint8_t micBuff[MIC_BLOCK_BX_SIZE];
 
     // Initialize the first Block
-    PrepareB0( len, panId, destAddr, srcAddr, micBuff );
+    PrepareB0( len, panId, destAddr, srcAddr, plType, micBuff );
 
     if( SecureElementComputeAesCmac( micBuff, msg, len, key, cmac ) != SECURE_ELEMENT_SUCCESS )
 	{
@@ -202,7 +206,7 @@ static LoRaLinkCryptoStatus_t ComputeCmacB0( uint8_t* msg, uint16_t len, Key_t* 
     return LORALINK_CRYPTO_SUCCESS;
 }
 
-static LoRaLinkCryptoStatus_t VerifyCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint32_t expectedCmac )
+static LoRaLinkCryptoStatus_t VerifyCmacB0( uint8_t* msg, uint16_t len, Key_t* key, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType, uint32_t expectedCmac )
 {
     if( msg == NULL )
     {
@@ -217,7 +221,7 @@ static LoRaLinkCryptoStatus_t VerifyCmacB0( uint8_t* msg, uint16_t len, Key_t* k
     memset1( micBuff, 0, CRYPTO_BUFFER_SIZE );
 
     // Initialize the first Block
-    PrepareB0( len, panId, destAddr, srcAddr, micBuff );
+    PrepareB0( len, panId, destAddr, srcAddr, plType, micBuff );
 
     // Copy the given data to the mic computation buffer
     memcpy1( ( micBuff + MIC_BLOCK_BX_SIZE ), msg, len );
@@ -237,7 +241,7 @@ static LoRaLinkCryptoStatus_t VerifyCmacB0( uint8_t* msg, uint16_t len, Key_t* k
     return LORALINK_CRYPTO_ERROR_SECURE_ELEMENT_FUNC;
 }
 
-static LoRaLinkCryptoStatus_t PrepareB0( uint16_t msgLen, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t* b0 )
+static LoRaLinkCryptoStatus_t PrepareB0( uint16_t msgLen, uint16_t panId, uint8_t destAddr, uint8_t srcAddr, uint8_t plType, uint8_t* b0 )
 {
     if( b0 == NULL )
     {
@@ -265,7 +269,7 @@ static LoRaLinkCryptoStatus_t PrepareB0( uint16_t msgLen, uint16_t panId, uint8_
 
     b0[14] = srcAddr;
 
-    b0[15] = 0x0F;
+    b0[15] = plType;
 
     return LORALINK_CRYPTO_SUCCESS;
 }

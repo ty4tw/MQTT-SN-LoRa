@@ -19,19 +19,14 @@
  * \author    Miguel Luis ( Semtech )
  *
  * \author    Gregory Cristian ( Semtech )
+ *
+ * \Modified by Tomoaki Yamaguchi
  */
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include "utilities.h"
-
-uint8_t theTraceFlg = 0;
-
-void SetTraceMode(uint8_t flg)
-{
-	theTraceFlg = flg;
-}
 
 
 /*!

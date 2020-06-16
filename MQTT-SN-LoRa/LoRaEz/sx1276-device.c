@@ -27,7 +27,6 @@
 
 #include "delay.h"
 #include "device-config.h"
-//#include "radio.h"
 
 /*!
  * \brief Gets the board PA selection configuration
@@ -165,10 +164,10 @@ void SX1276SetDeviceTcxo( uint8_t state )
     }
 }
 
-//uint32_t SX1276GetBoardTcxoWakeupTime( void )
-//{
-//    return DEVICE_TCXO_WAKEUP_TIME;
-//}
+uint32_t SX1276GetBoardTcxoWakeupTime( void )
+{
+    return DEVICE_TCXO_WAKEUP_TIME;
+}
 
 void SX1276Reset( void )
 {

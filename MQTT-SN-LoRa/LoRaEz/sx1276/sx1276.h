@@ -28,9 +28,9 @@
 
 #include "gpio.h"
 #include "spi.h"
-#include "sx1276/radio.h"
-#include "sx1276/sx1276Regs-Fsk.h"
-#include "sx1276/sx1276Regs-LoRa.h"
+#include "radio.h"
+#include "sx1276Regs-Fsk.h"
+#include "sx1276Regs-LoRa.h"
 
 /*!
  * Radio wake-up time from sleep
@@ -100,7 +100,6 @@ typedef struct
     bool     IqInverted;
     bool     RxContinuous;
     uint32_t TxTimeout;
-//    bool     PublicNetwork;
     uint8_t  Syncword;
 }RadioLoRaSettings_t;
 
@@ -429,5 +428,6 @@ void SX1276StopTxTimeoutTimer(void);
 void SX1276StopRxTimeoutTimer(void);
 void SX1276StopRxTimeoutSyncWord(void);
 
+RadioState_t SX1276GetStatus(void);
 
 #endif // __SX1276_H__
