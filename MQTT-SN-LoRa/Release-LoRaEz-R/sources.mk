@@ -24,5 +24,4 @@ LoRaEz/sx1276 \
 LoRaLink \
 MQTTSN \
 System \
-System/soft-se \
 

@@ -1,16 +1,14 @@
 /*
  * test.c
  *
- *  Created on: 2020/06/02
+ *  Created on: 2020/07/07
  *      Author: tomoaki
  */
 #include "commission.h"
 #include "LoRaEz.h"
-#include "LoRaLink.h"
-#include "LoRaLinkApi.h"
-#include "MQTTSNClient.h"
-#include "MQTTSNDefines.h"
-#include "MQTTSNPublish.h"
+
+
+#ifdef CLIENT
 
 MQTTSNConf_t conf =
 {
@@ -67,9 +65,34 @@ void on_publish( Payload_t* payload )
 
 SUBSCRIBE_LIST =  // { topic, callback, QOS_0 - QOS_2 },
 {
+	SUB( topic1, on_publish, QOS_1 ),
 	SUB( topic3, on_publish, QOS_1 ),
 
 	END_OF_SUBSCRIBE_LIST
 };
 
+#endif
 
+#ifdef  RXMODEM
+
+void start(void)
+{
+	SetUartBaudrate(115200);
+
+	LoRaLinkUartType_t type = LORALINK_UART_RX;
+	LoRaLinkUart( CRYPTO_KEY, PANID, UART_DEVADDR, type, SYNCWORD, UPLINK_CH, DWNLINK_CH, SF_VALUE, POWER_IN_DBM );
+}
+
+#endif
+
+#ifdef  TXMODEM
+
+void start(void)
+{
+	SetUartBaudrate(115200);
+
+	LoRaLinkUartType_t type = LORALINK_UART_TX;
+	LoRaLinkUart( CRYPTO_KEY, PANID, UART_DEVADDR, type, SYNCWORD, UPLINK_CH, DWNLINK_CH, SF_VALUE, POWER_IN_DBM );
+}
+
+#endif

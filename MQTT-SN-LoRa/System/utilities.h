@@ -51,11 +51,12 @@
  * DebugLog
  */
 #ifdef DEBUGLOG
-#define DLOG(...)            printf( __VA_ARGS__ )
-#define DLOG_MSG(...)        printf( "%s %d %s\r\n", __func__, __LINE__, __VA_ARGS__ )
-#define DLOG_INT(...)        printf( "%s %d %d\r\n", __func__, __LINE__, __VA_ARGS__ )
-#define DLOG_MSG_INT(...)    printf( "%s %d  %s %d\r\n", __func__, __LINE__, __VA_ARGS__ )
+#define DLOG(...)            printf("\033[32m"); printf( __VA_ARGS__ ); printf("\033[m\r")
+#define DLOG_MSG(...)        printf("\033[32m"); printf( "%s %d %s\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r")
+#define DLOG_INT(...)        printf("\033[32m"); printf( "%s %d %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r")
+#define DLOG_MSG_INT(...)    printf("\033[32m"); printf( "%s %d  %s %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r")
 #else
+#define DLOG(...)
 #define DLOG_MSG(...)
 #define DLOG_INT(...)
 #define DLOG_MSG_INT(...)

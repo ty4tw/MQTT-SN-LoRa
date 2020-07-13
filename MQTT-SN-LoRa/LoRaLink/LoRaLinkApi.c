@@ -11,6 +11,7 @@
 #include "LoRaLinkTypes.h"
 #include "LoRaLinkCrypto.h"
 #include "LoRaLink.h"
+#include "aes.h"
 #include "timer.h"
 #include "utilities.h"
 #include "delay.h"

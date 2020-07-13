@@ -3,10 +3,8 @@ LoRaLink/LoRaLinkCrypto.o: ../LoRaLink/LoRaLinkCrypto.c \
  /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/LoRaEz/systime.h \
  /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/LoRaEz/timer.h \
  /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/LoRaEz/sx1276/radio.h \
- ../LoRaLink/LoRaLink.h ../LoRaLink/LoRaLinkCrypto.h \
- /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/soft-se/aes.h \
- /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/soft-se/cmac.h \
- /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/soft-se/aes.h \
+ ../LoRaLink/LoRaLink.h ../LoRaLink/LoRaLinkCrypto.h ../LoRaLink/aes.h \
+ ../LoRaLink/cmac.h \
  /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/utilities.h \
  /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/LoRaEz/mcu/cmsis/stm32l0xx.h \
  /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/LoRaEz/mcu/cmsis/stm32l082xx.h \
@@ -55,11 +53,9 @@ LoRaLink/LoRaLinkCrypto.o: ../LoRaLink/LoRaLinkCrypto.c \
 
 ../LoRaLink/LoRaLinkCrypto.h:
 
-/home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/soft-se/aes.h:
+../LoRaLink/aes.h:
 
-/home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/soft-se/cmac.h:
-
-/home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/soft-se/aes.h:
+../LoRaLink/cmac.h:
 
 /home/tomoaki/git-MQTT-SN-LoRa/MQTT-SN-LoRa/System/utilities.h:
 

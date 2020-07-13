@@ -189,6 +189,9 @@ static MQTTSNState_t SendSubscribeMsg( MQTTSNSubscribe_t* msg )
 	{
 		Connect();
 		LoRaLinkStatus_t stat = WriteMsg( buf );
+
+		DLOG("Send %s msgId: %c%04x\r\n", GetMsgType( buf[1] ), buf[2] & MQTTSN_FLAG_DUP ? '+' : ' ', msg->msgId );
+
 		msg->retryCount++;
 
 		if ( stat == LORALINK_STATUS_OK )

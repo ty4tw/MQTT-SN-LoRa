@@ -294,7 +294,7 @@ static  LoRaLinkStatus_t sendPublish( MQTTSNPublish_t* msg )
 
 	RestartPingRequestTimer( );
 
-	DLOG(" send %s msgId:%c%04x\n", "PUBLISH", buf[2] & MQTTSN_FLAG_DUP ? '+' : ' ', msg->msgId );
+	DLOG("Send %s msgId: %c%04x\r\n", "PUBLISH", buf[2] & MQTTSN_FLAG_DUP ? '+' : ' ', msg->msgId );
 
 	if ( msg->qos == QOS_0 || msg->qos == QOS_M1 )
 	{
@@ -311,8 +311,6 @@ static  LoRaLinkStatus_t sendPublish( MQTTSNPublish_t* msg )
 	}
 
 	msg->retryCount++;
-
-	DLOG("\r\n");
 
 	return stat;
 }

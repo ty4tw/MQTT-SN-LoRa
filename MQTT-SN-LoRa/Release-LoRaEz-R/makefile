@@ -8,7 +8,6 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
--include System/soft-se/subdir.mk
 -include System/subdir.mk
 -include MQTTSN/subdir.mk
 -include LoRaLink/subdir.mk

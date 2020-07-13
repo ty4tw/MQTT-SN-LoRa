@@ -56,6 +56,7 @@ static TimerEvent_t SleepTimer = { 0 };
 
 static bool  PingRequestFlg = false;
 static bool  SleepTimeupFlg = false;
+static bool  AsleepFlg      = false;
 
 static bool  QoSM1DeviceFlg = false;
 
@@ -128,6 +129,11 @@ void MQTTSNQoSM1Init( uint8_t*  prefixOfClientId )
 	TimerInit( &SleepTimer, OnSleepTimeupEvent );
 }
 
+uint8_t* GetMsgType( uint8_t msgType )
+{
+	return (uint8_t*)packet_names[ msgType ];
+}
+
 void Connect( void )
 {
 	uint8_t* pos;
@@ -168,6 +174,8 @@ void Connect( void )
 			}
 
 			RetryCount = MQTTSN_RETRY_COUNT;
+
+			DLOG("Send %s\r\n", packet_names[ Msg[1] ] );
 			WriteMsg( Msg );
 		}
 		else if ( ClientStatus == CS_SEND_WILLTOPIC )
@@ -179,6 +187,7 @@ void Connect( void )
 			ClientStatus = CS_WAIT_WILLMSGREQ;
 			RetryCount = MQTTSN_RETRY_COUNT;
 
+			DLOG("Send %s\r\n", packet_names[ Msg[1] ] );
 			WriteMsg( Msg );
 		}
 		else if ( ClientStatus == CS_SEND_WILLMSG )
@@ -188,6 +197,8 @@ void Connect( void )
 			strcpy( (char*)pos, (const char*)WillMsg);
 			ClientStatus = CS_WAIT_CONNACK;
 			RetryCount = MQTTSN_RETRY_COUNT;
+
+			DLOG("Send %s\r\n", packet_names[ Msg[1] ] );
 			WriteMsg( Msg );
 		}
 		else  if ( ClientStatus == CS_GW_LOST )
@@ -197,6 +208,8 @@ void Connect( void )
 			*pos = 0;                        // SERCHGW
 			ClientStatus = CS_SEARCHING;
 			RetryCount = MQTTSN_RETRY_COUNT;
+
+			DLOG("Send %s\r\n", packet_names[ Msg[1] ] );
 			WriteMsg( Msg );
 		}
 
@@ -235,6 +248,8 @@ void Disconnect( uint32_t ms )
 	}
 
 	RetryCount = MQTTSN_RETRY_COUNT;
+
+	DLOG("Send %s\r\n", packet_names[ Msg[1] ] );
 	WriteMsg( Msg );
 
 	while ( ClientStatus != CS_DISCONNECTED && ClientStatus != CS_ASLEEP )
@@ -274,36 +289,46 @@ static void GetConnectResponce( uint32_t timeout )
 			}
 		}
 	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_GWINFO && ClientStatus == CS_SEARCHING)
+	else
 	{
-		GwId = MQTTSNMsg[2];
-		GwDevAddr = SenderDevAddr;
-		ClientStatus = CS_CONNECTING;
-	}
-	else if (MQTTSNMsg[1] == MQTTSN_TYPE_WILLTOPICREQ && ClientStatus == CS_WAIT_WILLTOPICREQ)
-	{
-		ClientStatus = CS_SEND_WILLTOPIC;
-	}
-	else if (MQTTSNMsg[1] == MQTTSN_TYPE_WILLMSGREQ && ClientStatus == CS_WAIT_WILLMSGREQ)
-	{
-		ClientStatus = CS_SEND_WILLMSG;
-	}
-	else if (MQTTSNMsg[1] == MQTTSN_TYPE_CONNACK && ClientStatus == CS_WAIT_CONNACK)
-	{
-		if (MQTTSNMsg[2] == MQTTSN_RC_ACCEPTED)
-		{
-			RestartPingRequestTimer();
-			ConnectRetry = 0;
-			GwPanId = RecvPacket.PanId;
-			ClearTopicTable();
-			ClientStatus = CS_ACTIVE;
+		DLOG("Recv %s\r\n", packet_names[ MQTTSNMsg[1] ] );
 
-
-			OnConnect();  // SUBSCRIBEs are conducted
-		}
-		else
+		if ( MQTTSNMsg[1] == MQTTSN_TYPE_GWINFO && ClientStatus == CS_SEARCHING)
 		{
+			GwId = MQTTSNMsg[2];
+			GwDevAddr = SenderDevAddr;
 			ClientStatus = CS_CONNECTING;
+		}
+		else if (MQTTSNMsg[1] == MQTTSN_TYPE_WILLTOPICREQ && ClientStatus == CS_WAIT_WILLTOPICREQ)
+		{
+			ClientStatus = CS_SEND_WILLTOPIC;
+		}
+		else if (MQTTSNMsg[1] == MQTTSN_TYPE_WILLMSGREQ && ClientStatus == CS_WAIT_WILLMSGREQ)
+		{
+			ClientStatus = CS_SEND_WILLMSG;
+		}
+		else if (MQTTSNMsg[1] == MQTTSN_TYPE_CONNACK && ClientStatus == CS_WAIT_CONNACK)
+		{
+			if (MQTTSNMsg[2] == MQTTSN_RC_ACCEPTED)
+			{
+				RestartPingRequestTimer();
+				ConnectRetry = 0;
+				GwPanId = RecvPacket.PanId;
+				ClearTopicTable();
+				ClientStatus = CS_ACTIVE;
+
+				if ( AsleepFlg == false )
+				{
+					OnConnect();  // SUBSCRIBEs are conducted
+				}
+				AsleepFlg = true;
+
+				GetMessage( 1000 );  // try to receive PUBLIC for 1 sec. GW sends it in some case
+			}
+			else
+			{
+				ClientStatus = CS_CONNECTING;
+			}
 		}
 	}
 }
@@ -326,25 +351,35 @@ static uint8_t GetDisconnectResponce( uint32_t timeout )
 			GwId = 0;
 			return 1;
 		}
-		return 0;
 	}
-	if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBLISH)
+	else
 	{
-		Published( MQTTSNMsg, MQTTSNMsg[0] );
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_DISCONNECT)
-	{
-		if ( TsleepMs > 0 )
+
+		if ( MQTTSNMsg[1] == MQTTSN_TYPE_DISCONNECT)
 		{
-			ClientStatus = CS_ASLEEP;
-			StartClientWakeupTimer( TsleepMs );
+			DLOG("Recv %s\r\n", packet_names[ MQTTSNMsg[1] ] );
+
+			if ( TsleepMs > 0 )
+			{
+				ClientStatus = CS_ASLEEP;
+				AsleepFlg = true;
+				StartClientWakeupTimer( TsleepMs );
+			}
+			else
+			{
+				AsleepFlg = false;
+				ClientStatus = CS_DISCONNECTED;
+			}
 		}
-		else
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBLISH)
 		{
-			ClientStatus = CS_DISCONNECTED;
+			DLOG("Recv %s\r\n",packet_names[ MQTTSNMsg[1] ] );
+			DLOG("       msgId:%04x topicType:%02x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[1] & 0x03, MQTTSNMsg[3], MQTTSNMsg[4] );
+
+			Published( MQTTSNMsg, MQTTSNMsg[0] );
 		}
 	}
-	return 0;
+	return len;
 }
 
 uint8_t GetMessage( uint32_t timeout )
@@ -353,70 +388,80 @@ uint8_t GetMessage( uint32_t timeout )
 	if ( len == 0 )
 	{
 		Connect();
-		return len;
 	}
 	else
 	{
-		DLOG( "Recv %s\r\n", packet_names[ MQTTSNMsg[1] ] );
-	}
+		DLOG("Recv %s\r\n",packet_names[ MQTTSNMsg[1] ] );
 
-	if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBLISH)
-	{
-		Published( MQTTSNMsg, MQTTSNMsg[0] );
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBACK )
-	{
-		DLOG("  msgId: %04x rc:%x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 3) ), MQTTSNMsg[5]);
-		ResponcePublish( MQTTSNMsg, len );
-
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBCOMP || MQTTSNMsg[1] == MQTTSN_TYPE_PUBREC
-				|| MQTTSNMsg[1] == MQTTSN_TYPE_PUBREL)
-	{
-		DLOG(" msgId:%04x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 2) ) );
-		ResponcePublish( MQTTSNMsg, (uint16_t) len );
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_SUBACK || MQTTSNMsg[1] == MQTTSN_TYPE_UNSUBACK)
-	{
-		ResponceSubscribe( MQTTSNMsg );
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_REGISTER)
-	{
-		ResponceRegister( MQTTSNMsg, len );
-
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_REGACK)
-	{
-		ResponceRegAck(getUint16( MQTTSNMsg + 4), getUint16( MQTTSNMsg + 2));
-
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PINGRESP)
-	{
-		RestartPingRequestTimer();
-		if ( ClientStatus == CS_AWAKE )
+		if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBLISH)
 		{
-			ClientStatus = CS_ASLEEP;
+			DLOG("       msgId:%04x topicType:%02x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[1] & 0x03, MQTTSNMsg[3], MQTTSNMsg[4] );
+
+			Published( MQTTSNMsg, MQTTSNMsg[0] );
 		}
-		else
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBACK )
 		{
-			ClientStatus = CS_ACTIVE;
+			DLOG("       msgId:%04x topicType:%02x topicId:%02x%02x\r\n", MQTTSNMsg[1], getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[2], MQTTSNMsg[3] );
+
+			ResponcePublish( MQTTSNMsg, len );
+
 		}
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_DISCONNECT)
-	{
-		ClientStatus = CS_DISCONNECTED;
-		StopPingRequestTimer( );
-	}
-	else if ( MQTTSNMsg[1] == MQTTSN_TYPE_ADVERTISE)
-	{
-		uint16_t duration = getUint16( (const uint8_t*)(MQTTSNMsg + 3) );
-		if ( duration < 61 )
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBCOMP || MQTTSNMsg[1] == MQTTSN_TYPE_PUBREC
+					|| MQTTSNMsg[1] == MQTTSN_TYPE_PUBREL)
 		{
-			Tadv = duration * 1500;
+			DLOG("       msgId:%04x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 2) ) );
+			ResponcePublish( MQTTSNMsg, (uint16_t) len );
 		}
-		else
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_SUBACK || MQTTSNMsg[1] == MQTTSN_TYPE_UNSUBACK)
 		{
-			Tadv = duration * 1100;
+			DLOG("       msgId:%04x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[3], MQTTSNMsg[4] );
+
+			ResponceSubscribe( MQTTSNMsg );
+		}
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_REGISTER)
+		{
+			DLOG("       msgId:%04x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[3], MQTTSNMsg[4] );
+
+			ResponceRegister( MQTTSNMsg, len );
+
+		}
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_REGACK)
+		{
+			DLOG("       msgId:%04x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[2], MQTTSNMsg[3] );
+
+			ResponceRegAck(getUint16( MQTTSNMsg + 4), getUint16( MQTTSNMsg + 2));
+
+		}
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PINGRESP)
+		{
+			ResponceRegAck(getUint16( MQTTSNMsg + 4), getUint16( MQTTSNMsg + 2));
+			RestartPingRequestTimer();
+
+			if ( ClientStatus == CS_AWAKE )
+			{
+				ClientStatus = CS_ASLEEP;
+			}
+			else
+			{
+				ClientStatus = CS_ACTIVE;
+			}
+		}
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_DISCONNECT)
+		{
+			ClientStatus = CS_DISCONNECTED;
+			StopPingRequestTimer( );
+		}
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_ADVERTISE)
+		{
+			uint16_t duration = getUint16( (const uint8_t*)(MQTTSNMsg + 3) );
+			if ( duration < 61 )
+			{
+				Tadv = duration * 1500;
+			}
+			else
+			{
+				Tadv = duration * 1100;
+			}
 		}
 	}
 	return len;
@@ -428,18 +473,18 @@ static MQTTSNState_t SendPingReqMsg( void )
 	PingRetryCount = 0;
 
 	uint8_t* msg = NULL;
-	msg[0] = 0x02;
-	msg[1] = MQTTSN_TYPE_PINGREQ;
-
 	uint8_t len = strlen( (const char*)ClientId );
 
 	if ( ClientStatus == CS_ASLEEP )
 	{
-		msg = (uint8_t*)malloc( len + 2 );
+		msg = (uint8_t*)malloc( len + 2 + 1 );
 		msg[0] = len + 2;
 		msg[1] = MQTTSN_TYPE_PINGREQ;
 		memcpy1( msg + 2, ClientId, len );
+		msg[ 2 + len + 1] = 0;
 		ClientStatus = CS_AWAKE;
+
+		DLOG("Send %s ClientId: %s\r\n", "PINGREQ" , msg + 3 + len );
 	}
 	else if ( ClientStatus == CS_ACTIVE )
 	{
@@ -447,6 +492,8 @@ static MQTTSNState_t SendPingReqMsg( void )
 		msg[0] = 2;
 		msg[1] = MQTTSN_TYPE_PINGREQ;
 		ClientStatus = CS_WAIT_PINGRESP;
+
+		DLOG("Send %s ClientId:\r\n", "PINGREQ" );
 	}
 
 
@@ -468,7 +515,7 @@ static MQTTSNState_t SendPingReqMsg( void )
 	free( msg );
 	ClientStatus = CS_GW_LOST;
 	GwId = 0;
-	DLOG("   !!! PINGREQ Timeout\n");
+	DLOG("     !!! PINGRESP Recv Timeout\n");
 	return MQTTSN_STATE_RETRY_OUT;
 }
 

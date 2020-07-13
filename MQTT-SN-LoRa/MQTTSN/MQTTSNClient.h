@@ -49,6 +49,8 @@ uint8_t GetMessage( uint32_t timeout );
 void Disconnect( uint32_t ms );
 void RestartPingRequestTimer( void );
 void CheckPingRequest( void );
+uint8_t* GetMsgType( uint8_t msgType );
+
 #endif /* MQTTSNCLIENT_H_ */
 
 
