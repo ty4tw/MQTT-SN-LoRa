@@ -281,7 +281,7 @@
                             							
                             <tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.1958956191" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler">
                                 								
-                                <option id="fr.ac6.managedbuild.tool.gnu.cross.asm.gendebug.2123131293" superClass="fr.ac6.managedbuild.tool.gnu.cross.asm.gendebug" value="false" valueType="boolean"/>
+                                <option id="fr.ac6.managedbuild.tool.gnu.cross.asm.gendebug.2123131293" name="Generate debugging information (-g)" superClass="fr.ac6.managedbuild.tool.gnu.cross.asm.gendebug" value="false" valueType="boolean"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.assembler.input.2131321135" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
                                 								

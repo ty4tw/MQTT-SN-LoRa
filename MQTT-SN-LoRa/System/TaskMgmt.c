@@ -478,13 +478,7 @@ void WaitMs(uint32_t milsecs)
 		}
 		else
 		{
-			// Check Beacon or Downlink
-//			LoRaMacProcess( );
 
-//			if ( Task_FPort > 0 )
-			{
-//				CheckDownlink();
-			}
 		}
 	}
 }
@@ -516,14 +510,7 @@ void WaitInt(uint32_t milsecs)
 		}
 		else
 		{
-			// Check Beacon or Downlink
-//			LoRaMacProcess( );
 
-			// Check Downlink
-//			if ( Task_FPort > 0 )
-			{
-//				CheckDownlink();
-			}
 		}
 	}
 	TimerStop( &WakeupTimer );

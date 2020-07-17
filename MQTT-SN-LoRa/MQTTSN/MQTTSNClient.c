@@ -252,7 +252,7 @@ void Disconnect( uint32_t ms )
 	DLOG("Send %s\r\n", packet_names[ Msg[1] ] );
 	WriteMsg( Msg );
 
-	while ( ClientStatus != CS_DISCONNECTED && ClientStatus != CS_ASLEEP )
+	while ( ClientStatus != CS_DISCONNECTED && ClientStatus != CS_ASLEEP && RetryCount-- >= 0 )
 	{
 		if ( GetDisconnectResponce( MQTTSN_TIMEOUT_MS ) > 0 )
 		{

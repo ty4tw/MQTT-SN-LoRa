@@ -3,3 +3,7 @@
 /Release-LoRaEz/
 /Debug-LoRaEz-R/
 /Release-LoRaEz-R/
+/core
+/*.cfg
+/*.xml
+
