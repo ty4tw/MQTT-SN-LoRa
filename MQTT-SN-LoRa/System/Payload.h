@@ -137,6 +137,6 @@ void    ReacquirePayload(Payload_t* pl);
  */
 void SetRowdataToPayload(Payload_t* pl, uint8_t* data, uint8_t length);
 
-uint8_t GetRowdaataLength( Payload_t* pl );
+uint8_t GetRowdataLength( Payload_t* pl );
 
 #endif /* APPCTRL_PAYLOAD_H_ */

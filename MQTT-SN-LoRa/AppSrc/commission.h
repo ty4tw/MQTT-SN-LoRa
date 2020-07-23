@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 #define UPLINK_CH       40
-#define DWNLINK_CH      41
+#define DWNLINK_CH      46
 #define SF_VALUE        SF_9
 #define POWER_IN_DBM    13
 

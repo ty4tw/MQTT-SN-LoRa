@@ -52,10 +52,12 @@ void ClearSubscribeMsg( MQTTSNSubscribe_t* msg )
 
 void OnConnect( void )
 {
+	DLOG("onConnect start\r\n");
 	for ( uint8_t i = 0; theOnPublishList[i].topicName != 0; i++ )
 	{
 		SubscribeByName( theOnPublishList[i].topicName, theOnPublishList[i].pubCallback, theOnPublishList[i].qos );
 	}
+	DLOG("onConnect done\r\n");
 }
 
 void SubscribeByName( uint8_t* topicName, TopicCallback onPublish, MQTTSNQos_t qos )
@@ -188,9 +190,9 @@ static MQTTSNState_t SendSubscribeMsg( MQTTSNSubscribe_t* msg )
 	while ( msg->retryCount < MQTTSN_RETRY_COUNT )
 	{
 		Connect();
-		LoRaLinkStatus_t stat = WriteMsg( buf );
 
 		DLOG("Send %s msgId: %c%04x\r\n", GetMsgType( buf[1] ), buf[2] & MQTTSN_FLAG_DUP ? '+' : ' ', msg->msgId );
+		LoRaLinkStatus_t stat = WriteMsg( buf );
 
 		msg->retryCount++;
 

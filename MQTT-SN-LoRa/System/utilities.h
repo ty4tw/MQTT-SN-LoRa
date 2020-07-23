@@ -33,7 +33,6 @@
 #include <stdint.h>
 #include "stm32l0xx.h"
 
-#define DEBUGLOG
 
 /*!
  * Generic definition
@@ -50,7 +49,7 @@
 /*!
  * DebugLog
  */
-#ifdef DEBUGLOG
+#ifdef DEBUG
 #define DLOG(...)            printf("\033[32m"); printf( __VA_ARGS__ ); printf("\033[m\r")
 #define DLOG_MSG(...)        printf("\033[32m"); printf( "%s %d %s\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r")
 #define DLOG_INT(...)        printf("\033[32m"); printf( "%s %d %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r")

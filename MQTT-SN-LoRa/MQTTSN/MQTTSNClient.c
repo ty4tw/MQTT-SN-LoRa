@@ -57,6 +57,8 @@ static TimerEvent_t SleepTimer = { 0 };
 static bool  PingRequestFlg = false;
 static bool  SleepTimeupFlg = false;
 static bool  AsleepFlg      = false;
+static bool  WaitPublishFlg = false;
+static bool  onConnectExecFlg = false;
 
 static bool  QoSM1DeviceFlg = false;
 
@@ -226,7 +228,7 @@ void Reconnect( void )
 
 void Disconnect( uint32_t ms )
 {
-	if ( ClientStatus == CS_GW_LOST || ClientStatus == CS_DISCONNECTED )
+	if ( ClientStatus == CS_GW_LOST || ClientStatus == CS_DISCONNECTED || ClientStatus == CS_DISCONNECTING )
 	{
 		return;
 	}
@@ -247,9 +249,18 @@ void Disconnect( uint32_t ms )
 		StartClientWakeupTimer( ms );
 	}
 
-	RetryCount = MQTTSN_RETRY_COUNT;
+	// Try to recv PUBLISH before send DISCONNECT
+	uint8_t len = 1;
 
-	DLOG("Send %s\r\n", packet_names[ Msg[1] ] );
+	while ( len != 0 && WaitPublishFlg == true )
+	{
+		len = GetMessage( MQTTSN_TIMEOUT_MS );
+	}
+
+
+	RetryCount = 0;
+
+	DLOG("Send %s %ldms\r\n", packet_names[ Msg[1] ], ms );
 	WriteMsg( Msg );
 
 	while ( ClientStatus != CS_DISCONNECTED && ClientStatus != CS_ASLEEP && RetryCount-- >= 0 )
@@ -314,16 +325,20 @@ static void GetConnectResponce( uint32_t timeout )
 				RestartPingRequestTimer();
 				ConnectRetry = 0;
 				GwPanId = RecvPacket.PanId;
-				ClearTopicTable();
 				ClientStatus = CS_ACTIVE;
 
-				if ( AsleepFlg == false )
+				if ( CleanSession == true )
+				{
+					ClearTopicTable();
+				}
+
+				if ( AsleepFlg == false &&  ( CleanSession == false && onConnectExecFlg == false ) )
 				{
 					OnConnect();  // SUBSCRIBEs are conducted
+					onConnectExecFlg = true;
 				}
-				AsleepFlg = true;
 
-				GetMessage( 1000 );  // try to receive PUBLIC for 1 sec. GW sends it in some case
+				GetMessage( MQTTSN_TIMEOUT_MS );  // try to receive PUBLIC. GW sends PUBLISH if it has retain message.
 			}
 			else
 			{
@@ -369,6 +384,7 @@ static uint8_t GetDisconnectResponce( uint32_t timeout )
 			{
 				AsleepFlg = false;
 				ClientStatus = CS_DISCONNECTED;
+				StopPingRequestTimer();
 			}
 		}
 		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBLISH)
@@ -385,11 +401,8 @@ static uint8_t GetDisconnectResponce( uint32_t timeout )
 uint8_t GetMessage( uint32_t timeout )
 {
 	uint8_t len = ReadMsg( timeout );
-	if ( len == 0 )
-	{
-		Connect();
-	}
-	else
+
+	if ( len > 0 )
 	{
 		DLOG("Recv %s\r\n",packet_names[ MQTTSNMsg[1] ] );
 
@@ -415,6 +428,11 @@ uint8_t GetMessage( uint32_t timeout )
 		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_SUBACK || MQTTSNMsg[1] == MQTTSN_TYPE_UNSUBACK)
 		{
 			DLOG("       msgId:%04x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[3], MQTTSNMsg[4] );
+
+			if ( MQTTSNMsg[1] == MQTTSN_TYPE_SUBACK )
+			{
+				WaitPublishFlg = true;
+			}
 
 			ResponceSubscribe( MQTTSNMsg );
 		}
@@ -464,39 +482,15 @@ uint8_t GetMessage( uint32_t timeout )
 			}
 		}
 	}
+	else
+	{
+		DLOG("Recv Timeout\r\n");
+	}
 	return len;
 }
 
-
-static MQTTSNState_t SendPingReqMsg( void )
+static MQTTSNState_t SendPingReq( uint8_t* msg )
 {
-	PingRetryCount = 0;
-
-	uint8_t* msg = NULL;
-	uint8_t len = strlen( (const char*)ClientId );
-
-	if ( ClientStatus == CS_ASLEEP )
-	{
-		msg = (uint8_t*)malloc( len + 2 + 1 );
-		msg[0] = len + 2;
-		msg[1] = MQTTSN_TYPE_PINGREQ;
-		memcpy1( msg + 2, ClientId, len );
-		msg[ 2 + len + 1] = 0;
-		ClientStatus = CS_AWAKE;
-
-		DLOG("Send %s ClientId: %s\r\n", "PINGREQ" , msg + 3 + len );
-	}
-	else if ( ClientStatus == CS_ACTIVE )
-	{
-		msg = (uint8_t*)malloc( 2 );
-		msg[0] = 2;
-		msg[1] = MQTTSN_TYPE_PINGREQ;
-		ClientStatus = CS_WAIT_PINGRESP;
-
-		DLOG("Send %s ClientId:\r\n", "PINGREQ" );
-	}
-
-
 	while ( (ClientStatus !=  CS_ACTIVE) && (ClientStatus != CS_ASLEEP)  )
 	{
 		LoRaLinkStatus_t stat = WriteMsg( msg );
@@ -517,6 +511,38 @@ static MQTTSNState_t SendPingReqMsg( void )
 	GwId = 0;
 	DLOG("     !!! PINGRESP Recv Timeout\n");
 	return MQTTSN_STATE_RETRY_OUT;
+}
+
+static MQTTSNState_t SendPingReqMsg( void )
+{
+	PingRetryCount = 0;
+
+	uint8_t* msg = NULL;
+	uint8_t len = strlen( (const char*)ClientId );
+
+	if ( ClientStatus == CS_ASLEEP )
+	{
+		msg = (uint8_t*)malloc( len + 2 + 1 );
+		msg[0] = len + 2;
+		msg[1] = MQTTSN_TYPE_PINGREQ;
+		memcpy1( msg + 2, ClientId, len );
+		msg[ 2 + len + 1] = 0;
+		ClientStatus = CS_AWAKE;
+
+		DLOG("Send %s ClientId: %s\r\n", "PINGREQ" , msg + 3 + len );
+		return SendPingReq( msg );
+	}
+	else if ( ClientStatus == CS_ACTIVE )
+	{
+		msg = (uint8_t*)malloc( 2 );
+		msg[0] = 2;
+		msg[1] = MQTTSN_TYPE_PINGREQ;
+		ClientStatus = CS_WAIT_PINGRESP;
+
+		DLOG("Send %s w/o ClientId\r\n", "PINGREQ" );
+		return SendPingReq( msg );
+	}
+	return MQTTSN_STATE_INVALID_STATUS;
 }
 
 void CheckPingRequest( void )
@@ -592,7 +618,6 @@ LoRaLinkStatus_t WriteMsg( uint8_t* msg )
 	}
 	return stat;
 }
-
 
 
 static uint8_t ReadMsg( uint32_t timeout )

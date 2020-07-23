@@ -67,7 +67,7 @@
         	
     </configuration>
     	
-    <configuration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.2018582998" name="Release-LoRaEz">
+    <configuration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.119754017.990148960" name="Release">
         		
         <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
             			

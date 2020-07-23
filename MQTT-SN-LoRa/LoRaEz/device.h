@@ -140,4 +140,6 @@ Gpio_t* DeviceGetInt1(void);
 
 uint8_t DeviceGetChar(uint16_t secs);
 
+void  DisableLowPower( void );
+
 #endif // __DEVICE_H__

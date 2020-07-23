@@ -381,7 +381,7 @@ void SetRowdataToPayload(Payload_t* pl, uint8_t* data, uint8_t length)
 	pl->Length = length;
 }
 
-uint8_t GetRowdaataLength( Payload_t* pl )
+uint8_t GetRowdataLength( Payload_t* pl )
 {
 	return pl->Length;
 }

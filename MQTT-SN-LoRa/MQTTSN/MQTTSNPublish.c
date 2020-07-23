@@ -60,7 +60,7 @@ static void resetPublishMsg( MQTTSNPublish_t* msg )
 
 void PublishByName( uint8_t* topicName, Payload_t* payload, MQTTSNQos_t qos, bool retain)
 {
-	PublishRowdataByName( topicName, GetPL_RowData( payload ), GetRowdaataLength( payload ), qos, retain );
+	PublishRowdataByName( topicName, GetPL_RowData( payload ), GetRowdataLength( payload ), qos, retain );
 }
 
 
@@ -221,6 +221,8 @@ void SendPubAck( uint16_t topicId, uint16_t msgId, uint8_t rc )
 	setUint16(msg + 2, topicId);
 	setUint16(msg + 4, msgId);
 	msg[6] = rc;
+
+	DLOG("Send %s msgId: %d\r\n", "PUBACK" , msgId );
 	WriteMsg(msg);
 }
 
@@ -230,6 +232,8 @@ void SendPubRel( uint16_t msgId)
 	buf[0] = 4;
 	buf[1] = MQTTSN_TYPE_PUBREL;
 	setUint16( buf + 2, msgId );
+
+	DLOG("Send %s msgId: %d\r\n", "PUBREL" , msgId );
 	WriteMsg( buf );
 }
 
@@ -334,7 +338,7 @@ void Published( uint8_t* msg, uint8_t msglen )
 	Payload_t payload;
 	SetRowdataToPayload( &payload, msg + 7, msglen - 7 );
 
-	if ( msg[1] & MQTTSN_FLAG_QOS_1 )
+	if ( msg[2] & MQTTSN_FLAG_QOS_1 )
 	{
 		SendPubAck( topicId, getUint16( msg + 5) , MQTTSN_RC_ACCEPTED );
 	}

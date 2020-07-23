@@ -248,7 +248,7 @@ LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, Lo
 		DeviceStatus = DEVICE_STATE_RX_INIT;
 	}
 
-
+//	DisableLowPower();
 
 	rc = LORALINK_STATUS_OK;
 	LoRaLinkApiReadParameters_t resp = { 0 };

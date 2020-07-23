@@ -29,6 +29,8 @@ LORALINK   := LoRaLink
 MQTTSN := MQTTSN
 SYSTEM := System
 
+LOG :=
+
 INCLUDE :=
 INCLUDES += $(INCLUDE) \
 -I$(SRCDIR) \
@@ -100,27 +102,27 @@ $(PROG):$(APPCOBJS) $(LORAEZOBJS) $(LORALINKOBJSS) $(MQTTSNOBJS) $(SYSTEMOBJS) $
 
 $(OUTDIR)/$(SRCDIR)/%.o : $(SRCDIR)/%.c
 	@if [ ! -e `dirname $@` ]; then mkdir -p `dirname $@`; fi
-	$(CCARM) -D$(STM82) -D$(MODULE) -D$(TYPE) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 	
+	$(CCARM) -D$(STM82) -D$(MODULE) -D$(TYPE) -D$(LOG) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 	
 
 	
 $(OUTDIR)/$(LORAEZ)/%.o : $(LORAEZ)/%.c
 	@if [ ! -e `dirname $@` ]; then mkdir -p `dirname $@`; fi
-	$(CCARM) -D$(STM82) -D$(MODULE) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 
+	$(CCARM) -D$(STM82) -D$(MODULE) -D$(LOG) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 
 
 
 $(OUTDIR)/$(LORALINK)/%.o : $(LORALINK)/%.c
 	@if [ ! -e `dirname $@` ]; then mkdir -p `dirname $@`; fi
-	$(CCARM) -D$(STM82) -D$(MODULE) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 
+	$(CCARM) -D$(STM82) -D$(MODULE)  -D$(LOG) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 
 	
 	
 $(OUTDIR)/$(MQTTSN)/%.o : $(MQTTSN)/%.c
 	@if [ ! -e `dirname $@` ]; then mkdir -p `dirname $@`; fi
-	$(CCARM) -D$(STM82) -D$(MODULE) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 
+	$(CCARM) -D$(STM82) -D$(MODULE) -D$(LOG) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 
 	
 		
 $(OUTDIR)/$(SYSTEM)/%.o : $(SYSTEM)/%.c
 	@if [ ! -e `dirname $@` ]; then mkdir -p `dirname $@`; fi
-	$(CCARM) -D$(STM82) -D$(MODULE) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 	
+	$(CCARM) -D$(STM82) -D$(MODULE) -D$(LOG) $(MCUFLAGS) $(DEFS) $(INCLUDES) $(CCFLAGS) -std=c11  -o $@ -c $<  -MMD -MP -MF $(@:%.o=%.d) 	
 
 $(OUTDIR)/$(ARMGCC)/%.o : $(ARMGCC)/%.s
 	@if [ ! -e `dirname $@` ]; then mkdir -p `dirname $@`; fi

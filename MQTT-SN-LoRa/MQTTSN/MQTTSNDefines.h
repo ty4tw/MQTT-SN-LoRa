@@ -15,7 +15,6 @@
 #include <stddef.h>
 #include "Payload.h"
 
-#define DEBUG_LOG
 
 /*======================================
       MQTT-SN Defines

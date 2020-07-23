@@ -148,6 +148,11 @@ void DeviceSetBaudeRate(uint32_t baudrate)
 	BaudRate = baudrate;
 }
 
+void  DisableLowPower( void )
+{
+	UsbIsConnected = true;
+}
+
 
 /*!
  * UART2 FIFO buffers size
