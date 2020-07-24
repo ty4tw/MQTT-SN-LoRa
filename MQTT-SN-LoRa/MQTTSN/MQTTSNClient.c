@@ -249,7 +249,7 @@ void Disconnect( uint32_t ms )
 		StartClientWakeupTimer( ms );
 	}
 
-	// Try to recv PUBLISH before send DISCONNECT
+	// Receive PUBLISH before sending DISCONNECT if subscribed
 	uint8_t len = 1;
 
 	while ( len != 0 && WaitPublishFlg == true )

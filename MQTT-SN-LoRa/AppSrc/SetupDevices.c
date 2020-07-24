@@ -40,7 +40,6 @@ void start(void)
 
 	LoRaLinkDeviceInit( CRYPTO_KEY, PANID, 0x04, SYNCWORD, UPLINK_CH, DWNLINK_CH, SF_VALUE, POWER_IN_DBM );
 	MQTTSNClientInit( &conf );
-	Connect();
 }
 
 void task1( void )
