@@ -21,6 +21,7 @@
 #include "LoRaLink.h"
 #include "utilities.h"
 #include "sx1276.h"
+#include "systime.h"
 
 extern void OnConnect( void );
 
@@ -93,7 +94,6 @@ static void StopPingRequestTimer( void );
 
 void MQTTSNClientInit( MQTTSNConf_t* conf )
 {
-	uint16_t panId = LoRaLinkGetPanId();
 	uint8_t devAddr = LoRaLinkGetSourceAddr();
 
 	ClientStatus = CS_GW_LOST;
@@ -108,24 +108,25 @@ void MQTTSNClientInit( MQTTSNConf_t* conf )
 	{
 		free( ClientId );
 	}
-	ClientId = malloc( strlen( conf->clientId) + 6 );
-	sprintf( (char*)ClientId, "%s%04x%02x", conf->clientId, panId, devAddr );
+	ClientId = malloc( strlen( conf->clientId) + 2 );
+	sprintf( (char*)ClientId, "%s%02x", conf->clientId, devAddr );
 
 	TimerInit( &KeepAliveTimer, OnKeepAliveTimeupEvent );
 	TimerInit( &SleepTimer, OnSleepTimeupEvent );
 }
 
-void MQTTSNQoSM1Init( uint8_t*  prefixOfClientId )
+void MQTTSNQoSM1Init( uint8_t*  prefixOfClientId, uint8_t gwAddr )
 {
-	uint16_t panId = LoRaLinkGetPanId();
 	uint8_t devAddr = LoRaLinkGetSourceAddr();
-
+	
+	GwId = 1;
+	GwDevAddr = gwAddr;
 	ClientStatus = CS_ACTIVE;
 
 	uint8_t len = strlen( (const char*)prefixOfClientId );
 
 	ClientId = (uint8_t*)malloc( len + 6 );
-	sprintf( (char*)ClientId, "%s%04x%02x", prefixOfClientId, panId, devAddr );
+	sprintf( (char*)ClientId, "%s%02x", prefixOfClientId, devAddr );
 
 	TimerInit( &KeepAliveTimer, OnKeepAliveTimeupEvent );
 	TimerInit( &SleepTimer, OnSleepTimeupEvent );
@@ -326,6 +327,13 @@ static void GetConnectResponce( uint32_t timeout )
 				ConnectRetry = 0;
 				GwPanId = RecvPacket.PanId;
 				ClientStatus = CS_ACTIVE;
+
+				if ( MQTTSNMsg[0] == 7 )
+				{
+					SysTime_t syst = { 0 };
+					syst.Seconds = getUint32( MQTTSNMsg + 3 );
+					SysTimeSet( syst );
+				}
 
 				if ( CleanSession == true )
 				{

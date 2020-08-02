@@ -25,6 +25,7 @@
 #define LORALINK_CODERATE         1       //  4/5
 #define LORALINK_PREAMBLE_LENGTH  8
 #define LORALINK_DUTYCYCLE        10      //  10%
+#define LORALINK_MAX_PORWER       13      //  13dBm
 
 #define LORALINK_RSSI_THRESH     -83
 #define LORALINK_MAX_CARRIERSENSE_TIME  5
@@ -39,10 +40,8 @@
 
 
 /*!
- * ARIB T-108 standard Parameters
+ * ARIB T-108 Parameters  ( Japan STD )
  */
-uint8_t  MaxPayloadDwell0[] = {91, 188, 200, 244, 244, 244, 244, 244 };
-uint8_t  MaxPayloadDwell1[] = { 0, 0, 15, 57, 125, 244, 244, 244 };
 
 // 24ch - 38ch
 uint32_t FreqenciesDwell0[] = { 920600000, 920800000, 921000000, 921200000, 921400000, 921600000,
@@ -56,6 +55,8 @@ uint8_t  DwelltimeRange[]   = { 24, 39, 62 };
 
 uint32_t Bandwidths[]       = { 125000, 125000, 125000, 125000, 125000, 125000, 250000, 0 };
 
+uint8_t  MaxPayloadDwell0[] = {91, 188, 200, 244, 244, 244, 244, 244 };
+uint8_t  MaxPayloadDwell1[] = { 0, 0, 15, 57, 125, 244, 244, 244 };
 
 
 /*
@@ -181,7 +182,15 @@ LoRaLinkStatus_t LoRaLinkDeviceInit( uint8_t* key, uint16_t panId, uint8_t devAd
 
 	LoRaLinkCtx.RxConfig.SFValue = sfValue;
 	LoRaLinkCtx.TxConfig.SFValue = sfValue;
-	LoRaLinkCtx.TxConfig.TxPower = power;
+
+	if ( power > LORALINK_MAX_PORWER )
+	{
+		LoRaLinkCtx.TxConfig.TxPower = LORALINK_MAX_PORWER;
+	}
+	else
+	{
+		LoRaLinkCtx.TxConfig.TxPower = power;
+	}
 	LoRaLinkCtx.RxConfig.RxContinuous = true;
 	LoRaLinkCtx.RxConfig.WindowTimeout = LORALINK_WINDOW_TIMEOUT;
 
@@ -195,7 +204,7 @@ LoRaLinkStatus_t LoRaLinkDeviceInit( uint8_t* key, uint16_t panId, uint8_t devAd
 
 
 
-LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, LoRaLinkUartType_t uartType, uint8_t syncWord, uint8_t uplinkCh, uint8_t dwnlinkCh, LoRaLinkSf_t sfValue, int8_t power )
+LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, LoRaLinkUartType_t uartType, uint8_t syncWord, uint8_t uplinkCh, uint8_t dwnlinkCh, LoRaLinkSf_t sfValue )
 {
 	LoRaLinkStatus_t rc = LORALINK_STATUS_ERROR;
 
@@ -229,7 +238,7 @@ LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, Lo
 
 	LoRaLinkCtx.RxConfig.SFValue = sfValue;
 	LoRaLinkCtx.TxConfig.SFValue = sfValue;
-	LoRaLinkCtx.TxConfig.TxPower = power;
+	LoRaLinkCtx.TxConfig.TxPower = LORALINK_MAX_PORWER;
 	LoRaLinkCtx.RxConfig.WindowTimeout = LORALINK_WINDOW_TIMEOUT;
 
 	LoRaLinkCryptoSetKey( key );

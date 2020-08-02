@@ -62,7 +62,7 @@ LoRaLinkStatus_t LoRaLinkDeviceInit( uint8_t* key, uint16_t panId, uint8_t devAd
  * \param [IN] power    Output power in dBm
  * \retval value    LoRaLinkStatus
  */
-LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, LoRaLinkUartType_t devType, uint8_t syncWord, uint8_t devTxCh, uint8_t devRxCh, LoRaLinkSf_t sfValue, int8_t power  );
+LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, LoRaLinkUartType_t devType, uint8_t syncWord, uint8_t devTxCh, uint8_t devRxCh, LoRaLinkSf_t sfValue );
 /*!
  * Receive LoRaLink Packet
  *

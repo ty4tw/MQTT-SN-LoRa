@@ -42,6 +42,7 @@ typedef enum
 }MQTTSNState_t;
 
 void MQTTSNClientInit( MQTTSNConf_t* conf );
+void MQTTSNQoSM1Init( uint8_t*  prefixOfClientId, uint8_t gwAddr );
 void Connect( void );
 void Reconnect( void );
 uint16_t GetNextMsgId( void );
