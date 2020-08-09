@@ -45,7 +45,7 @@
         	
     </configuration>
     	
-    <configuration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.498323938" name="Debug-LoRaEz">
+    <configuration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.119754017.990148960" name="Release">
         		
         <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
             			
@@ -67,7 +67,7 @@
         	
     </configuration>
     	
-    <configuration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.119754017.990148960" name="Release">
+    <configuration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.1225349636" name="Debug-LoRaEz">
         		
         <extension point="org.eclipse.cdt.core.LanguageSettingsProvider">
             			

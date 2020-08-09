@@ -202,7 +202,7 @@ LoRaLinkStatus_t LoRaLinkDeviceInit( uint8_t* key, uint16_t panId, uint8_t devAd
 	return LORALINK_STATUS_OK;
 }
 
-
+#define TX_TIMEOUT 20000
 
 LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, LoRaLinkUartType_t uartType, uint8_t syncWord, uint8_t uplinkCh, uint8_t dwnlinkCh, LoRaLinkSf_t sfValue )
 {
@@ -264,6 +264,10 @@ LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, Lo
 	LoRaLinkApi_t api = { 0 };
 	LoRaLinkPacket_t ack = { 0 };
 
+	uint32_t  nfcTime = 0;
+	int32_t   delay;
+
+
 	while ( true )
 	{
 		LoRaLinkHandleIrqEvents();
@@ -313,6 +317,21 @@ LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, Lo
 			DeviceStatus = DEVICE_STATE_SLEEP;
 			break;
 
+		case DEVICE_STATE_TX_NO_FREE_CH:
+			delay = randr( RND_LWL, RND_UPL);
+
+			if ( ( nfcTime += delay ) < TX_TIMEOUT )
+			{
+				TimerSetValue( &LoRaLinkCtx.TxDelayedTimer, delay );
+				TimerStart(&LoRaLinkCtx.TxDelayedTimer);
+				DeviceStatus = DEVICE_STATE_SLEEP;
+			}
+			else
+			{
+				return LORALINK_STATUS_CHANNEL_NOT_FREE;
+			}
+			break;
+
 		case DEVICE_STATE_TX_DONE:
 			ack.FRMPayloadType = API_RSP_ACK;
 			ack.FRMPayloadSize = 0;
@@ -325,6 +344,7 @@ LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, Lo
 			break;
 
 		case DEVICE_STATE_SLEEP:
+			// No need to set LowPower, getting the power from USB
 			break;
 
 		default:

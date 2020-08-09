@@ -23,7 +23,7 @@
 #define XOFF         0x13
 #define PAD          0x20
 
-static uint8_t UartGetByte( uint8_t* buf );
+//static uint8_t UartGetByte( uint8_t* buf );
 static void UartPutByte( uint8_t c );
 
 extern uint8_t LoRaLinkGetSourceAddr(void);
@@ -57,7 +57,7 @@ void LoRaLinkApiWrite( LoRaLinkPacket_t* pkt )
 	uint8_t chks = 0;
 	uint16_t len = pkt->FRMPayloadSize + 7;  //  = DestAddr[1] + Rssi[2] + Snr[2] + PayloadType[1] + Crc[1]
 
-	UartPutByte(FRAME_DLMT);
+	UartPutChar(FRAME_DLMT);
 
 	setUint16(buf,len);
 	UartPutByte(buf[0]);
@@ -109,7 +109,7 @@ bool LoRaLinkApiRead(LoRaLinkApi_t* api, LoRaLinkApiReadParameters_t* para)
 	uint8_t byte = 0;
 	uint16_t val = 0;
 
-	while ( UartGetByte(&byte) == 1 )
+	while ( UartGetChar(&byte) == 0 )
 	{
 		if ( byte == FRAME_DLMT )
 		{
@@ -117,6 +117,25 @@ bool LoRaLinkApiRead(LoRaLinkApi_t* api, LoRaLinkApiReadParameters_t* para)
 			para->Error = true;
 			para->Available = false;
 			continue;
+		}
+
+		if ( para->apipos > 0 && byte == ESCAPE )
+		{
+			if( UartGetChar(&byte ) == 0 )
+			{
+				byte ^= PAD;  // decode
+			}
+			else
+			{
+				para->Escape = true;
+				continue;
+			}
+		}
+
+		if( para->Escape == true )
+		{
+			byte ^= PAD;
+			para->Escape = false;
 		}
 
 		switch ( para->apipos )
@@ -162,26 +181,9 @@ bool LoRaLinkApiRead(LoRaLinkApi_t* api, LoRaLinkApiReadParameters_t* para)
 			}
 			break;
 		}
-
 		para->apipos++;
 	}
 	return false;
-}
-
-
-static uint8_t UartGetByte( uint8_t* buf )
-{
-	if ( UartGetChar(buf) == 0 )
-	{
-		if ( *buf == ESCAPE )
-		{
-			DelayMs(1);
-			UartGetChar(buf);
-			*buf = PAD ^ *buf;
-		}
-		return 1;
-	}
-	return 0;
 }
 
 static void UartPutByte( uint8_t c )

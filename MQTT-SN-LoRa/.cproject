@@ -53,11 +53,11 @@
                                     									
                                     <listOptionValue builtIn="false" value="USE_DEBUGGER"/>
                                     									
-                                    <listOptionValue builtIn="false" value="CLIENT"/>
+                                    <listOptionValue builtIn="false" value="DEBUGLOGENABLE"/>
                                     									
-                                    <listOptionValue builtIn="false" value="DEBUG"/>
+                                    <listOptionValue builtIn="false" value="TXMODEM"/>
                                     									
-                                    <listOptionValue builtIn="false" value="ABZ78_R"/>
+                                    <listOptionValue builtIn="false" value="ABZ78"/>
                                     									
                                     <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
                                     									
@@ -325,166 +325,6 @@
             		
         </cconfiguration>
         		
-        <cconfiguration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.498323938">
-            			
-            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.498323938" moduleId="org.eclipse.cdt.core.settings" name="Debug-LoRaEz">
-                				
-                <externalSettings/>
-                				
-                <extensions>
-                    					
-                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
-                    					
-                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-                    				
-                </extensions>
-                			
-            </storageModule>
-            			
-            <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-                				
-                <configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GmakeErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.CWDLocator;org.eclipse.cdt.core.GCCErrorParser" id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.498323938" name="Debug-LoRaEz" parent="fr.ac6.managedbuild.config.gnu.cross.exe.debug" postannouncebuildStep="Generating binary and Printing size information:" postbuildStep="arm-none-eabi-objcopy -O binary &quot;${BuildArtifactFileBaseName}.elf&quot; &quot;${BuildArtifactFileBaseName}.bin&quot;; arm-none-eabi-size &quot;${BuildArtifactFileName}&quot;">
-                    					
-                    <folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.498323938." name="/" resourcePath="">
-                        						
-                        <toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.614143965" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug">
-                            							
-                            <option id="fr.ac6.managedbuild.option.gnu.cross.mcu.1839628956" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu" useByScannerDiscovery="false" value="STM32L082CZYx" valueType="string"/>
-                            							
-                            <option id="fr.ac6.managedbuild.option.gnu.cross.board.510263671" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board" useByScannerDiscovery="false" value="LoRaEz-ABZ78" valueType="string"/>
-                            							
-                            <targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross.312306731" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
-                            							
-                            <builder buildPath="${workspace_loc:/LoRaLinkSDK}/Debug" id="fr.ac6.managedbuild.builder.gnu.cross.2106272449" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="fr.ac6.managedbuild.builder.gnu.cross"/>
-                            							
-                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1145921936" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler">
-                                								
-                                <option id="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level.334761417" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="fr.ac6.managedbuild.gnu.c.optimization.level.none" valueType="enumerated"/>
-                                								
-                                <option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.option.debugging.level.217489816" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.default" valueType="enumerated"/>
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.908434527" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
-                                    									
-                                    <listOptionValue builtIn="false" value="USE_DEBUGGER"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="CLIENT"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="DEBUG"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="ABZ78"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="STM32L082xx"/>
-                                    								
-                                </option>
-                                								
-                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.2090262686" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/AppSrc}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/cmsis}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/cmsis/arm-gcc}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/STM32L0xx_HAL_Driver/Inc}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/STM32L0xx_HAL_Driver/Inc/Legacy}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/sx1276}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaLink}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/MQTTSN}&quot;"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/System}&quot;"/>
-                                    								
-                                </option>
-                                								
-                                <option id="gnu.c.compiler.option.dialect.std.2120480389" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
-                                								
-                                <inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.2146037304" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
-                                								
-                                <inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.669380879" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.565627036" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler">
-                                								
-                                <option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level.106121768" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false"/>
-                                								
-                                <option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.option.debugging.level.1043612326" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
-                                							
-                            </tool>
-                            							
-                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.1418257342" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker">
-                                								
-                                <option id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script.483579405" name="Linker Script (-T)" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script" useByScannerDiscovery="false" value="${workspace_loc:/${ProjName}}/LoRaEz/mcu/cmsis/arm-gcc/stm32l082xx_flash.ld" valueType="string"/>
-                                								
-                                <option id="gnu.c.link.option.noshared.191486862" name="No shared libraries (-static)" superClass="gnu.c.link.option.noshared" useByScannerDiscovery="false" value="true" valueType="boolean"/>
-                                								
-                                <option id="gnu.c.link.option.ldflags.699180179" name="Linker flags" superClass="gnu.c.link.option.ldflags" useByScannerDiscovery="false" value="-specs=nosys.specs -specs=nano.specs -u _printf_float" valueType="string"/>
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1604564808" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
-                                    									
-                                    <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
-                                    									
-                                    <additionalInput kind="additionalinput" paths="$(LIBS)"/>
-                                    								
-                                </inputType>
-                                							
-                            </tool>
-                            							
-                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1525562162" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker"/>
-                            							
-                            <tool id="fr.ac6.managedbuild.tool.gnu.archiver.548128226" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver"/>
-                            							
-                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.1680045306" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler">
-                                								
-                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.2059667499" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-                                								
-                                <inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.1215506550" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
-                                							
-                            </tool>
-                            						
-                        </toolChain>
-                        					
-                    </folderInfo>
-                    					
-                    <sourceEntries>
-                        						
-                        <entry excluding="modem.c|modemTx.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="AppSrc"/>
-                        						
-                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="LoRaEz"/>
-                        						
-                        <entry excluding="LoRaEz" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="LoRaLink"/>
-                        						
-                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="MQTTSN"/>
-                        						
-                        <entry excluding="soft-se/soft-se.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="System"/>
-                        					
-                    </sourceEntries>
-                    				
-                </configuration>
-                			
-            </storageModule>
-            			
-            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
-            		
-        </cconfiguration>
-        		
         <cconfiguration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.119754017.990148960">
             			
             <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.119754017.990148960" moduleId="org.eclipse.cdt.core.settings" name="Release">
@@ -535,7 +375,7 @@
                                     									
                                     <listOptionValue builtIn="false" value="ABZ78"/>
                                     									
-                                    <listOptionValue builtIn="false" value="DEBUG"/>
+                                    <listOptionValue builtIn="false" value="TXMODEM"/>
                                     									
                                     <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
                                     									
@@ -644,6 +484,166 @@
             <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
             		
         </cconfiguration>
+        		
+        <cconfiguration id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.1225349636">
+            			
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.1225349636" moduleId="org.eclipse.cdt.core.settings" name="Debug-LoRaEz">
+                				
+                <externalSettings/>
+                				
+                <extensions>
+                    					
+                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+                    					
+                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    				
+                </extensions>
+                			
+            </storageModule>
+            			
+            <storageModule moduleId="cdtBuildSystem" version="4.0.0">
+                				
+                <configuration artifactExtension="elf" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" errorParsers="org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GmakeErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.CWDLocator;org.eclipse.cdt.core.GCCErrorParser" id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.1225349636" name="Debug-LoRaEz" parent="fr.ac6.managedbuild.config.gnu.cross.exe.debug" postannouncebuildStep="Generating binary and Printing size information:" postbuildStep="arm-none-eabi-objcopy -O binary &quot;${BuildArtifactFileBaseName}.elf&quot; &quot;${BuildArtifactFileBaseName}.bin&quot;; arm-none-eabi-size &quot;${BuildArtifactFileName}&quot;">
+                    					
+                    <folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.1225349636." name="/" resourcePath="">
+                        						
+                        <toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.1789978295" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug">
+                            							
+                            <option id="fr.ac6.managedbuild.option.gnu.cross.mcu.1010347177" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu" useByScannerDiscovery="false" value="STM32L082CZYx" valueType="string"/>
+                            							
+                            <option id="fr.ac6.managedbuild.option.gnu.cross.board.1013553824" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board" useByScannerDiscovery="false" value="LoRaEz-ABZ78" valueType="string"/>
+                            							
+                            <targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross.1924398043" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
+                            							
+                            <builder buildPath="${workspace_loc:/LoRaLinkSDK}/Debug" id="fr.ac6.managedbuild.builder.gnu.cross.425778080" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="fr.ac6.managedbuild.builder.gnu.cross"/>
+                            							
+                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1587777746" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler">
+                                								
+                                <option id="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level.722242709" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="fr.ac6.managedbuild.gnu.c.optimization.level.none" valueType="enumerated"/>
+                                								
+                                <option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.option.debugging.level.1703148418" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.default" valueType="enumerated"/>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.preprocessor.def.symbols.802385360" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
+                                    									
+                                    <listOptionValue builtIn="false" value="USE_DEBUGGER"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="CLIENT"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="DEBUG"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="ABZ78"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="STM32L082xx"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.compiler.option.include.paths.969758351" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/AppSrc}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/cmsis}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/cmsis/arm-gcc}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/STM32L0xx_HAL_Driver/Inc}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/mcu/STM32L0xx_HAL_Driver/Inc/Legacy}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaEz/sx1276}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/LoRaLink}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/MQTTSN}&quot;"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/System}&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option id="gnu.c.compiler.option.dialect.std.1086750674" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
+                                								
+                                <inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1776649111" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
+                                								
+                                <inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.639645981" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.30095724" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler">
+                                								
+                                <option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level.357881541" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false"/>
+                                								
+                                <option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.option.debugging.level.1721796948" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
+                                							
+                            </tool>
+                            							
+                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.777878386" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker">
+                                								
+                                <option id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script.1819907150" name="Linker Script (-T)" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.script" useByScannerDiscovery="false" value="${workspace_loc:/${ProjName}}/LoRaEz/mcu/cmsis/arm-gcc/stm32l082xx_flash.ld" valueType="string"/>
+                                								
+                                <option id="gnu.c.link.option.noshared.1538198954" name="No shared libraries (-static)" superClass="gnu.c.link.option.noshared" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option id="gnu.c.link.option.ldflags.1342020065" name="Linker flags" superClass="gnu.c.link.option.ldflags" useByScannerDiscovery="false" value="-specs=nosys.specs -specs=nano.specs -u _printf_float" valueType="string"/>
+                                								
+                                <inputType id="cdt.managedbuild.tool.gnu.c.linker.input.950634375" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
+                                    									
+                                    <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
+                                    									
+                                    <additionalInput kind="additionalinput" paths="$(LIBS)"/>
+                                    								
+                                </inputType>
+                                							
+                            </tool>
+                            							
+                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1432502927" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker"/>
+                            							
+                            <tool id="fr.ac6.managedbuild.tool.gnu.archiver.426256009" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver"/>
+                            							
+                            <tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.922269528" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler">
+                                								
+                                <inputType id="cdt.managedbuild.tool.gnu.assembler.input.811447717" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+                                								
+                                <inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.4302913" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
+                                							
+                            </tool>
+                            						
+                        </toolChain>
+                        					
+                    </folderInfo>
+                    					
+                    <sourceEntries>
+                        						
+                        <entry excluding="modem.c|modemTx.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="AppSrc"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="LoRaEz"/>
+                        						
+                        <entry excluding="LoRaEz" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="LoRaLink"/>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="MQTTSN"/>
+                        						
+                        <entry excluding="soft-se/soft-se.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="System"/>
+                        					
+                    </sourceEntries>
+                    				
+                </configuration>
+                			
+            </storageModule>
+            			
+            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+            		
+        </cconfiguration>
         	
     </storageModule>
     	
@@ -667,13 +667,13 @@
         		
         <configuration configurationName="Release-LoRaEz-R"/>
         		
-        <configuration configurationName="Debug">
+        <configuration configurationName="Release">
             			
             <resource resourceType="PROJECT" workspacePath="/LoRaLinkSDK"/>
             		
         </configuration>
         		
-        <configuration configurationName="Release">
+        <configuration configurationName="Debug">
             			
             <resource resourceType="PROJECT" workspacePath="/LoRaLinkSDK"/>
             		
@@ -699,6 +699,12 @@
             		
         </scannerConfigBuildInfo>
         		
+        <scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.498323938;fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.498323938.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1145921936;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.2146037304">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
+        		
         <scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837;fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.851402177;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1341874538">
             			
             <autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
@@ -708,6 +714,12 @@
         <scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.release.1036510243;fr.ac6.managedbuild.config.gnu.cross.exe.release.1036510243.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.877785930;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1810616104">
             			
             <autodiscovery enabled="false" problemReportingEnabled="true" selectedProfileId=""/>
+            		
+        </scannerConfigBuildInfo>
+        		
+        <scannerConfigBuildInfo instanceId="fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.119754017.990148960;fr.ac6.managedbuild.config.gnu.cross.exe.debug.675241837.119754017.990148960.;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.808472647;fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.2047693080">
+            			
+            <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
             		
         </scannerConfigBuildInfo>
         	

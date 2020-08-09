@@ -108,7 +108,7 @@ void MQTTSNClientInit( MQTTSNConf_t* conf )
 	{
 		free( ClientId );
 	}
-	ClientId = malloc( strlen( conf->clientId) + 2 );
+	ClientId = malloc( strlen( conf->clientId) + 3 );
 	sprintf( (char*)ClientId, "%s%02x", conf->clientId, devAddr );
 
 	TimerInit( &KeepAliveTimer, OnKeepAliveTimeupEvent );

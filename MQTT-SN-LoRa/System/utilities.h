@@ -49,7 +49,7 @@
 /*!
  * DebugLog
  */
-#ifdef DEBUG
+#if  defined( DEBUGLOGENABLE ) &&  !defined( TXMODEM ) && !defined( RXMODEM )
 #define DLOG(...)            printf("\033[32m"); printf( __VA_ARGS__ ); printf("\033[m\r")
 #define DLOG_MSG(...)        printf("\033[32m"); printf( "%s %d %s\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r")
 #define DLOG_INT(...)        printf("\033[32m"); printf( "%s %d %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r")
