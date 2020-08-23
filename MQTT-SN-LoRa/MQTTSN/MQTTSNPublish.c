@@ -46,7 +46,7 @@ MQTTSNPublish_t PublishMsg = { 0 };
 const char* NULLCHAR = "";
 
 
-static void publish( uint8_t* topicName, uint16_t topicId, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, uint8_t topicType, bool retain);
+static MQTTSNState_t publish( uint8_t* topicName, uint16_t topicId, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, uint8_t topicType, bool retain);
 
 static MQTTSNState_t sendPublishMsg( MQTTSNPublish_t* msg );
 static  LoRaLinkStatus_t sendPublish( MQTTSNPublish_t* msg );
@@ -58,13 +58,13 @@ static void resetPublishMsg( MQTTSNPublish_t* msg )
 	memset1( (uint8_t*)msg, 0, sizeof( MQTTSNPublish_t ) );
 }
 
-void PublishByName( uint8_t* topicName, Payload_t* payload, MQTTSNQos_t qos, bool retain)
+MQTTSNState_t PublishByName( uint8_t* topicName, Payload_t* payload, MQTTSNQos_t qos, bool retain)
 {
-	PublishRowdataByName( topicName, GetPL_RowData( payload ), GetRowdataLength( payload ), qos, retain );
+	return PublishRowdataByName( topicName, GetPL_RowData( payload ), GetRowdataLength( payload ), qos, retain );
 }
 
 
-void PublishRowdataByName( uint8_t* topicName, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, bool retain)
+MQTTSNState_t PublishRowdataByName( uint8_t* topicName, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, bool retain)
 {
 	uint8_t topicType = MQTTSN_TOPIC_TYPE_NORMAL;
 	uint8_t topiclen = strlen ( (const char*)topicName );
@@ -73,10 +73,10 @@ void PublishRowdataByName( uint8_t* topicName, uint8_t* rowdata, uint8_t len, MQ
 	{
 		topicType = MQTTSN_TOPIC_TYPE_SHORT;
 	}
-	publish( topicName, 0, rowdata, len, qos, topicType, retain );
+	return publish( topicName, 0, rowdata, len, qos, topicType, retain );
 }
 
-static void publish( uint8_t* topicName, uint16_t topicId, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, uint8_t topicType, bool retain)
+static MQTTSNState_t publish( uint8_t* topicName, uint16_t topicId, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, uint8_t topicType, bool retain)
 {
 	uint16_t tid = 0;
 	resetPublishMsg( &PublishMsg );
@@ -126,18 +126,18 @@ static void publish( uint8_t* topicName, uint16_t topicId, uint8_t* rowdata, uin
 	if ( tid > 0 )
 	{
 		PublishMsg.status = TOPICID_IS_READY;
-		sendPublishMsg( &PublishMsg );
+		return sendPublishMsg( &PublishMsg );
 	}
 	else
 	{
 		PublishMsg.status = TOPICID_IS_SUSPEND;
-		RegisterTopic( topicName );
+		return RegisterTopic( topicName );
 	}
 }
 
-void PublishRowdataByPredefinedId(uint16_t topicId, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, bool retain)
+MQTTSNState_t PublishRowdataByPredefinedId(uint16_t topicId, uint8_t* rowdata, uint8_t len, MQTTSNQos_t qos, bool retain)
 {
-	publish( 0, topicId, rowdata, len, qos, MQTTSN_TOPIC_TYPE_PREDEFINED, retain );
+	return publish( 0, topicId, rowdata, len, qos, MQTTSN_TOPIC_TYPE_PREDEFINED, retain );
 }
 
 
@@ -290,6 +290,7 @@ static  LoRaLinkStatus_t sendPublish( MQTTSNPublish_t* msg )
 	buf[2] = msg->flag;
 
 	stat =  WriteMsg( buf );
+	msg->retryCount++;
 
 	if ( stat != LORALINK_STATUS_OK )
 	{
@@ -314,7 +315,7 @@ static  LoRaLinkStatus_t sendPublish( MQTTSNPublish_t* msg )
 		msg->status = WAIT_PUBREC;
 	}
 
-	msg->retryCount++;
+//	msg->retryCount++;
 
 	return stat;
 }

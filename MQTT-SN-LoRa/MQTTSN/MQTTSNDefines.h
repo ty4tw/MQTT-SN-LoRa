@@ -78,7 +78,7 @@
 
 #define MQTTSN_DEFAULT_KEEPALIVE_SEC (3600)     // 1H=3600sec
 #define MQTTSN_DEFAULT_DURATION_SEC   (900)     // 15min=900sec
-#define MQTTSN_TIMEOUT_MS           (20000)    // 20sec=10000ms
+#define MQTTSN_TIMEOUT_MS           (10000)    // 10sec=10000ms
 #define MQTTSN_RETRY_COUNT              (3)
 /*======================================
   MACROs and structure for Application

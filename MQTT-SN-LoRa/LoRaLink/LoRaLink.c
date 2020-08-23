@@ -461,7 +461,6 @@ LoRaLinkStatus_t LoRaLinkRecvPacket( LoRaLinkPacket_t* pkt, uint32_t timeout )
 
 		case DEVICE_STATE_SLEEP:
 			DeviceLowPowerHandler( );
-
 			break;
 
 		case DEVICE_STATE_RX_DONE:

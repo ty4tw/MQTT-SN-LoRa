@@ -208,7 +208,6 @@ static void Task_add(Task_t* task)
 	}
 }
 
-/*
 
 static Task_t* Task_eject(uint8_t id)
 {
@@ -248,7 +247,7 @@ static Task_t* Task_eject(uint8_t id)
 	}
 	return 0;
 }
-*/
+
 
 void Task_print(void)
 {
@@ -256,24 +255,24 @@ void Task_print(void)
 
 	while(cur > 0)
 	{
-		printf("Task ID = %d exTime=%lu \n", cur->id, cur->exTime);
+		DLOG("Task ID = %d exTime=%s \n", cur->id, SysTimeGetStrLocalTime(cur->exTime) );
 		cur = cur->next;
 	}
-	printf("\r\n");
+	DLOG("\r\n");
 }
 
 void SetIntMode(PinNames port, IrqModes mode, PinTypes type)
 {
 	if ( port == INT_0 )
 	{
-	GpioInit( DeviceGetInt0(), INT_0, PIN_INPUT, PIN_PUSH_PULL, type, 0 );
-	GpioSetInterrupt( DeviceGetInt0(), mode, IRQ_LOW_PRIORITY, OnInterrupt0 );
+		GpioInit( DeviceGetInt0(), INT_0, PIN_INPUT, PIN_PUSH_PULL, type, 0 );
+		GpioSetInterrupt( DeviceGetInt0(), mode, IRQ_LOW_PRIORITY, OnInterrupt0 );
 	}
 	else if ( port == INT_1 )
 	{
-//	GpioInit( BoardGetInt1(), INT_1, PIN_INPUT, PIN_PUSH_PULL, type, 0 );
-//	GpioSetInterrupt( BoardGetInt1(), mode, IRQ_LOW_PRIORITY, OnInterrupt1 );
-	printf("SetIntMode INT_1 was ignored\r\n");
+//		GpioInit( DeviceGetInt1(), INT_1, PIN_INPUT, PIN_PUSH_PULL, type, 0 );
+//		GpioSetInterrupt( DeviceGetInt1(), mode, IRQ_LOW_PRIORITY, OnInterrupt1 );
+		printf("SetIntMode INT_1 was ignored\r\n");
 	}
 }
 
@@ -355,9 +354,9 @@ static void Task_sleep(uint32_t execTime)
 			TimerStart( &TaskExecutionTimer );
 			TaskListHead->isRunning = 1;
 
-			Disconnect( tSh * 1000 );
-
+//			Disconnect( tSh * 1000 );
 			DeviceLowPowerHandler( );
+
 		}
 		else if ( TaskListHead->isRunning == 1 )
 		{
@@ -366,9 +365,8 @@ static void Task_sleep(uint32_t execTime)
 	}
 }
 
-/*
 
-static void Task_changeInterval(uint8_t id, uint16_t interval)
+void Task_changeInterval(uint8_t id, uint16_t interval)
 {
 	Task_t* task = Task_eject(id);
 
@@ -386,10 +384,9 @@ static void Task_changeInterval(uint8_t id, uint16_t interval)
 		}
 
 		Task_add(task);
-//		Task_print();
+		Task_print();
 	}
 }
-*/
 
 
 static void Task_run(void)
@@ -407,6 +404,10 @@ static void Task_run(void)
 		{
 			execTime = TaskListHead->exTime;
 			Task_sleep(execTime);
+		}
+		else
+		{
+			DeviceLowPowerHandler( );
 		}
 
 		CheckPingRequest();
@@ -430,7 +431,9 @@ static void Task_run(void)
 			{
 				task->callback();   //  Execute a Task   ( send MQTT-SN message in it )
 
-//				Task_print();
+				 /* Check memory leak */
+				DLOG_MSG_INT( " Free  RAM = ", GetFreeRam() );
+
 				task->isRunning = 0;
 				TaskListHead = task->next;
 				task->next = 0;
@@ -444,6 +447,7 @@ static void Task_run(void)
 				}
 				Task_add(task);
 				task = TaskListHead;
+				Task_print();
 			}
 		}
 	}
@@ -533,10 +537,9 @@ int main( void )
 	SysTimeSetTimeZone( UTC_DIFF );   // Time zone is JST
 	setInterrupt();
 	srand1( DeviceGetRandomSeed());
-	Task_init();
 
 	start();
-
+	Task_init();
 	Task_run();
 }
 

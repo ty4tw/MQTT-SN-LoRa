@@ -175,7 +175,7 @@ void SysTimeSetTimeZone(int hour);
  *
  * \retval LocalTime with string
  */
-char* SysTimeGetStrLocalTime(void);
+char* SysTimeGetStrLocalTime(uint32_t utc);
 
 #ifdef __cplusplus
 }

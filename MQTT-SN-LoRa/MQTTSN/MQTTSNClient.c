@@ -255,6 +255,7 @@ void Disconnect( uint32_t ms )
 
 	while ( len != 0 && WaitPublishFlg == true )
 	{
+		DLOG("Wait PUBLISH from the gateway.\r\n");
 		len = GetMessage( MQTTSN_TIMEOUT_MS );
 	}
 
@@ -303,7 +304,7 @@ static void GetConnectResponce( uint32_t timeout )
 	}
 	else
 	{
-		DLOG("Recv %s\r\n", packet_names[ MQTTSNMsg[1] ] );
+		DLOG("GetConnectResponce Recv %s\r\n", packet_names[ MQTTSNMsg[1] ] );
 
 		if ( MQTTSNMsg[1] == MQTTSN_TYPE_GWINFO && ClientStatus == CS_SEARCHING)
 		{
@@ -346,12 +347,22 @@ static void GetConnectResponce( uint32_t timeout )
 					onConnectExecFlg = true;
 				}
 
+				DLOG("Wait PUBLISH from the gateway.\r\n");
 				GetMessage( MQTTSN_TIMEOUT_MS );  // try to receive PUBLIC. GW sends PUBLISH if it has retain message.
 			}
 			else
 			{
 				ClientStatus = CS_CONNECTING;
 			}
+		}
+		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBLISH )
+		{
+			GwDevAddr = SenderDevAddr;
+			ClientStatus = CS_ACTIVE;
+			DLOG("       msgId:%04x topicType:%02x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[1] & 0x03, MQTTSNMsg[3], MQTTSNMsg[4] );
+
+			Published( MQTTSNMsg, MQTTSNMsg[0] );
+			ClientStatus = CS_CONNECTING;
 		}
 	}
 }
@@ -380,7 +391,7 @@ static uint8_t GetDisconnectResponce( uint32_t timeout )
 
 		if ( MQTTSNMsg[1] == MQTTSN_TYPE_DISCONNECT)
 		{
-			DLOG("Recv %s\r\n", packet_names[ MQTTSNMsg[1] ] );
+			DLOG("GetDisconnectResponce Recv %s\r\n", packet_names[ MQTTSNMsg[1] ] );
 
 			if ( TsleepMs > 0 )
 			{
@@ -412,7 +423,7 @@ uint8_t GetMessage( uint32_t timeout )
 
 	if ( len > 0 )
 	{
-		DLOG("Recv %s\r\n",packet_names[ MQTTSNMsg[1] ] );
+		DLOG("GetMessage Recv %s\r\n",packet_names[ MQTTSNMsg[1] ] );
 
 		if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBLISH)
 		{
@@ -422,7 +433,7 @@ uint8_t GetMessage( uint32_t timeout )
 		}
 		else if ( MQTTSNMsg[1] == MQTTSN_TYPE_PUBACK )
 		{
-			DLOG("       msgId:%04x topicType:%02x topicId:%02x%02x\r\n", MQTTSNMsg[1], getUint16( (const uint8_t*)(MQTTSNMsg+ 5) ), MQTTSNMsg[2], MQTTSNMsg[3] );
+			DLOG("       msgId:%04x topicId:%02x%02x\r\n", getUint16( (const uint8_t*)(MQTTSNMsg+ 4) ), MQTTSNMsg[2], MQTTSNMsg[3] );
 
 			ResponcePublish( MQTTSNMsg, len );
 

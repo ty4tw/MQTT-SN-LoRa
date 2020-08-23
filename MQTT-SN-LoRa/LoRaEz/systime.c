@@ -252,10 +252,20 @@ void SysTimeLocalTime( const uint32_t timestamp, struct tm *localtime )
 }
 
 
-char* SysTimeGetStrLocalTime(void)
+char* SysTimeGetStrLocalTime( uint32_t utc )
 {
-    SysTime_t syst = SysTimeGet();
-    time_t  time = syst.Seconds;
+	time_t time = 0;
+	SysTime_t syst = SysTimeGet();
+
+	if ( utc == 0 )
+	{
+    	time = syst.Seconds;
+	}
+	else
+	{
+		time = (time_t)utc;
+	}
+
     time += SysTimeTimeZone * 3600;
     struct tm tmg;
     SysTimeLocalTime( (const uint32_t)time, &tmg);

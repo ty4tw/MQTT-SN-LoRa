@@ -7,6 +7,8 @@
 #include "commission.h"
 #include "LoRaEz.h"
 
+#define DEV_ADDR 0x04
+
 #if defined( CLIENT )
 
 MQTTSNConf_t conf =
@@ -35,19 +37,20 @@ void start(void)
 	SetUartBaudrate(115200);
 	printf("\r\n\r\nStart\r\n");
 
-	LoRaLinkDeviceInit( CRYPTO_KEY, PANID, 0x04, SYNCWORD, UPLINK_CH, DWNLINK_CH, SF_VALUE, POWER_IN_DBM );
+	LoRaLinkDeviceInit( CRYPTO_KEY, PANID, DEV_ADDR, SYNCWORD, UPLINK_CH, DWNLINK_CH, SF_VALUE, POWER_IN_DBM );
 	MQTTSNClientInit( &conf );
 	Connect();
 }
 
 void task1( void )
 {
-	printf( "%s Task1 start\r\n", SysTimeGetStrLocalTime() );
+	printf( "%s Task1 start\r\n", SysTimeGetStrLocalTime(0) );
 	Payload_t pl;
 	ClearPayload( &pl );
 	SetRowdataToPayload( &pl, rowdata2, 5 );
 
-	PublishByName( topic3, &pl, QOS_1, retain );
+	MQTTSNState_t state = PublishByName( topic3, &pl, QOS_1, retain );
+	printf( "State = %d\r\n", (int)state );
 	Disconnect(0);
 	printf( "Task1 end\r\n");
 }
@@ -73,12 +76,16 @@ void on_publish( Payload_t* payload )
 
 SUBSCRIBE_LIST =  // { topic, callback, QOS_0 - QOS_2 },
 {
-	SUB( topic1, on_publish, QOS_1 ),
-	SUB( topic3, on_publish, QOS_1 ),
+	SUB( topic1, on_publish, QOS_0 ),
+	SUB( topic3, on_publish, QOS_0 ),
 
 	END_OF_SUBSCRIBE_LIST
 };
 
+//void wakeup(void)
+//{
+//	printf("wake up \r\n");
+//}
 /*===============================================================*/
 
 #elif defined( RXMODEM ) || defined( TXMODEM )

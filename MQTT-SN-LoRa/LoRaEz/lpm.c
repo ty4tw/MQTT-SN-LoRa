@@ -140,19 +140,7 @@ LpmGetMode_t LpmGetMode(void)
     return mode;
 }
 
-__weak void LpmEnterSleepMode( void )
-{
-}
-
 __weak void LpmExitSleepMode( void )
-{
-}
-
-__weak void LpmEnterStopMode( void )
-{
-}
-
-__weak void LpmExitStopMode( void )
 {
 }
 
@@ -163,3 +151,4 @@ __weak void LpmEnterOffMode( void )
 __weak void LpmExitOffMode( void )
 {
 }
+
