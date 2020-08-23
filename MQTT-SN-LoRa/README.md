@@ -37,7 +37,7 @@ https://www.st.com/en/development-tools/stm32cubeprog.html
    #### 2-3 Client Device
  ````
        touch AppSrc/test.c
-       make TYPE=CLIENT LOG=DEBUG
+       make TYPE=CLIENT LOG=DEBUGLOGENABLE
        Download Build/Firmware.bin to B-L0722Z-LRWAN with STM32CubeProgrammer
 ```` 
 ## Device
