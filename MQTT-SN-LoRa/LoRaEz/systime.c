@@ -271,11 +271,11 @@ char* SysTimeGetStrLocalTime( uint32_t utc )
     SysTimeLocalTime( (const uint32_t)time, &tmg);
     if ( SysTimeTimeZone == 0 )
     {
-    	sprintf(SysTimeStrLocalTime, " %04d-%02d-%02dT%02d:%02d:%02d.%03dZ", tmg.tm_year + 1900, tmg.tm_mon + 1, tmg.tm_mday, tmg.tm_hour, tmg.tm_min, tmg.tm_sec, syst.SubSeconds );
+    	sprintf(SysTimeStrLocalTime, "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", tmg.tm_year + 1900, tmg.tm_mon + 1, tmg.tm_mday, tmg.tm_hour, tmg.tm_min, tmg.tm_sec, syst.SubSeconds );
     }
     else
     {
-    	sprintf(SysTimeStrLocalTime, " %04d-%02d-%02dT%02d:%02d:%02d.%03d+%02d:00 ", tmg.tm_year + 1900, tmg.tm_mon + 1, tmg.tm_mday, tmg.tm_hour, tmg.tm_min, tmg.tm_sec, syst.SubSeconds, SysTimeTimeZone );
+    	sprintf(SysTimeStrLocalTime, "%04d-%02d-%02dT%02d:%02d:%02d.%03d+%02d:00 ", tmg.tm_year + 1900, tmg.tm_mon + 1, tmg.tm_mday, tmg.tm_hour, tmg.tm_min, tmg.tm_sec, syst.SubSeconds, SysTimeTimeZone );
     }
     return SysTimeStrLocalTime;
 }

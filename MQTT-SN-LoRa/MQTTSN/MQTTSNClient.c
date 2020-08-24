@@ -670,7 +670,7 @@ uint16_t GetNextMsgId( void )
 	return NextMsgId++;
 }
 
-char* GetClientId( void )
+uint8_t* GetClientId( void )
 {
 	return ClientId;
 }

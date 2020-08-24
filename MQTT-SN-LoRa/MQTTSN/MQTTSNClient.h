@@ -52,7 +52,7 @@ void Disconnect( uint32_t ms );
 void RestartPingRequestTimer( void );
 void CheckPingRequest( void );
 uint8_t* GetMsgType( uint8_t msgType );
-char* GetClientId( void );
+uint8_t* GetClientId( void );
 
 #endif /* MQTTSNCLIENT_H_ */
 
