@@ -328,7 +328,14 @@ LoRaLinkStatus_t LoRaLinkUart( uint8_t* key, uint16_t panId, uint8_t devAddr, Lo
 			}
 			else
 			{
-				return LORALINK_STATUS_CHANNEL_NOT_FREE;
+				ack.FRMPayloadType = API_RSP_NFC;
+				ack.FRMPayloadSize = 0;
+				ack.DestAddr = api.SourceAddr;
+				ack.SourceAddr = api.SourceAddr;
+				ack.Rssi = 0;
+				ack.Snr = 0;
+				LoRaLinkApiWrite(&ack);
+				DeviceStatus = DEVICE_STATE_TX_INIT;
 			}
 			break;
 

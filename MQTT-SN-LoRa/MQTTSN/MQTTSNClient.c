@@ -36,7 +36,7 @@ static const char* packet_names[] =
 };
 
 
-static uint16_t     NextMsgId = 1;
+static uint16_t     NextMsgId = 0;
 static uint8_t*     ClientId = NULL;
 static uint8_t*     WillTopic = NULL;
 static uint8_t*     WillMsg = NULL;
@@ -663,5 +663,14 @@ static uint8_t ReadMsg( uint32_t timeout )
 
 uint16_t GetNextMsgId( void )
 {
+	if ( NextMsgId == 0 )
+	{
+		NextMsgId = 1;
+	}
 	return NextMsgId++;
+}
+
+char* GetClientId( void )
+{
+	return ClientId;
 }

@@ -24,7 +24,7 @@ typedef enum
 {
 	MQTT_SN        = 0x40,
 	API_RSP_ACK    = 0x80,
-	API_RSP_NFC,
+	API_RSP_NFC    = 0x81,
 	API_RSP_TOT,
 	API_REQ_UTC,
 	API_RSP_UTC,
