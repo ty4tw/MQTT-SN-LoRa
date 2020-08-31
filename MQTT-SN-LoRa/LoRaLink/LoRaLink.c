@@ -489,6 +489,8 @@ LoRaLinkStatus_t LoRaLinkRecvPacket( LoRaLinkPacket_t* pkt, uint32_t timeout )
 			pkt->FRMPayloadType = LoRaLinkPacket.FRMPayloadType;
 			pkt->FRMPayloadSize = LoRaLinkPacket.FRMPayloadSize;
 			pkt->FRMPayload = LoRaLinkPacket.FRMPayload;
+
+			DLOG( "Rssi:%d Snr:%d\r\n", LoRaLinkPacket.Rssi, LoRaLinkPacket.Snr );
 			return LORALINK_STATUS_OK;
 
 		case DEVICE_STATE_RX_TIMEOUT:
