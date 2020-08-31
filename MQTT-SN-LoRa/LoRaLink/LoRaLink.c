@@ -135,6 +135,17 @@ void LoRaLinkSetDeviceAddr(uint8_t addr)
 	LoRaLinkCtx.LoRaLinkDeviceAddr = addr;
 }
 
+int16_t LoRaLinkGetRssi( void )
+{
+	return RxDoneParams.Rssi;
+}
+
+int8_t LoRaLinkGetSnr( void )
+{
+	return RxDoneParams.Snr;
+}
+
+
 void LoRaLinkInitilize(void)
 {
 	LoRaLinkRadioEvents.TxDone = OnRadioTxDone;

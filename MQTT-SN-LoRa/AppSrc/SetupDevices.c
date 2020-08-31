@@ -70,7 +70,7 @@ void on_publish( Payload_t* payload )
 	{
 		printf( "%0X ", GetUint8(payload) );
 	}
-	printf("\r\n");
+	printf( "Rssi : %d Snr : %d\r\n", GetRssi(), GetSnr() );
 }
 
 

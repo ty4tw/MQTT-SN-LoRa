@@ -13,6 +13,7 @@
 
 #include "device.h"
 #include "device-config.h"
+#include "LoRaLink.h"
 
 #if defined(ABZ78_R)
 static Gpio_t EzGpios[7] = { 0 };
@@ -105,4 +106,12 @@ uint16_t ReadVdd( void )
 	return DeviceMeasureVdd();
 }
 
+int16_t GetRssi( void )
+{
+	return LoRaLinkGetRssi();
+}
 
+int8_t GetSnr( void )
+{
+	return LoRaLinkGetSnr();
+}

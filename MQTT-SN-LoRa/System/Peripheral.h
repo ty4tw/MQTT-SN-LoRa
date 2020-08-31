@@ -146,6 +146,20 @@ void ToggleGpio( PortNo_t no );
 uint32_t ReadGpio( PortNo_t no );
 
 /*!
+ * \brief Reads the current GPIO input value
+ *
+ * \retval value   RSSI
+ */
+int16_t GetRssi( void );
+
+/*!
+ * \brief Reads the current GPIO input value
+ *
+ * \retval value   SNR
+ */
+int8_t GetSnr( void );
+
+/*!
  * \brief Get Free RAM size
  * *
  * \retval value    Free RAM size in bytes

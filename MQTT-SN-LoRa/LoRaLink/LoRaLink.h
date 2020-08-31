@@ -119,4 +119,8 @@ uint16_t LoRaLinkGetPanId( void );
 
 LoRaLinkPacket_t* LoRaLinkClearPacket( LoRaLinkPacket_t* pkt );
 
+int16_t LoRaLinkGetRssi( void );
+int8_t LoRaLinkGetSnr( void );
+
+
 #endif /* LORALINK_H_ */
