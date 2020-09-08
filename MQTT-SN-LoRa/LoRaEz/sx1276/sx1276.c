@@ -301,36 +301,31 @@ static uint8_t GetFskBandwidthRegValue( uint32_t bandwidth )
     while( 1 );
 }
 
-bool SX1276IsChannelFree( RadioModems_t modem, uint32_t freq, int16_t rssiThresh, uint32_t maxCarrierSenseTime )
+bool SX1276IsChannelFree( uint32_t freq, int16_t rssiThresh, uint32_t maxCarrierSenseTime )
 {
     bool status = true;
     int16_t rssi = 0;
     uint32_t carrierSenseTime = 0;
 
-    if( SX1276GetStatus( ) != RF_IDLE )
-    {
-        return false;
-    }
+    SX1276SetSleep( );
 
-    modem = MODEM_FSK;
-
-    SX1276SetModem( modem );
+    SX1276SetModem( MODEM_FSK );
 
     SX1276SetChannel( freq );
-
-    SX1276SetOpMode( RF_OPMODE_RECEIVER );
 
 	SX1276Write( REG_RXBW, GetFskBandwidthRegValue( FSK_RSSI_BANDWITH ) );
 	SX1276Write( REG_AFCBW, GetFskBandwidthRegValue( FSK_RSSI_BANDWITH ) );
 
-    DelayMs( 2 );
+    SX1276SetOpMode( RF_OPMODE_RECEIVER );
+
+    DelayMs( 1 );
 
     carrierSenseTime = TimerGetCurrentTime( );
 
     // Perform carrier sense for maxCarrierSenseTime
     while( TimerGetElapsedTime( carrierSenseTime ) < maxCarrierSenseTime )
     {
-        rssi = SX1276ReadRssi( modem );
+        rssi = SX1276ReadRssi( MODEM_FSK );
 
         if( rssi > rssiThresh )
         {

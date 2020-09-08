@@ -52,10 +52,10 @@
  * DebugLog
  */
 #if  defined( DEBUGLOGENABLE ) &&  !defined( TXMODEM ) && !defined( RXMODEM )
-#define DLOG(...)            printf("\033[32m"); printf( __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
-#define DLOG_MSG(...)        printf("\033[32m"); printf( "%s %d %s\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
-#define DLOG_INT(...)        printf("\033[32m"); printf( "%s %d %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
-#define DLOG_MSG_INT(...)    printf("\033[32m"); printf( "%s %d  %s %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
+#define DLOG(...)            printf("\033[33m"); printf( __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
+#define DLOG_MSG(...)        printf("\033[33m"); printf( "%s %d %s\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
+#define DLOG_INT(...)        printf("\033[33m"); printf( "%s %d %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
+#define DLOG_MSG_INT(...)    printf("\033[33m"); printf( "%s %d  %s %d\r\n", __func__, __LINE__, __VA_ARGS__ ); printf("\033[m\r"); fflush(stdout)
 #else
 #define DLOG(...)
 #define DLOG_MSG(...)
