@@ -15,8 +15,9 @@ https://www.st.com/en/development-tools/stm32cubeprog.html
 ## How to build
 ### 1. MQTT-SN Gateway
 ````
-   git clone -b experiment https://github.com/eclipse/paho.mqtt-sn.embedded-c.git
-   make SENSORNET=loralink
+$ git clone -b develop https://github.com/eclipse/paho.mqtt-sn.embedded-c  
+$ cd paho.mqtt-sn.embedded-c/MQTTSNGateway      
+$ ./build.sh loralink  
 ````
    
 ### 2. Sensornetwork devices
