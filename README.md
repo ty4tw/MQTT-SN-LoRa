@@ -1,4 +1,4 @@
-# LoRaMQTT-SN
+# MQTT-SN-LoRa
 
 ## LoRaLink sensor network for MQTT-SN and MQTT-SN Client device firmware.
 You have to modify LoRaLink/LoaLink.c code, if you use this outside of JAPAN.
@@ -15,14 +15,14 @@ https://www.st.com/en/development-tools/stm32cubeprog.html
 ## How to build
 ### 1. MQTT-SN Gateway
 ````
-$ git clone -b develop https://github.com/eclipse/paho.mqtt-sn.embedded-c  
-$ cd paho.mqtt-sn.embedded-c/MQTTSNGateway      
-$ ./build.sh loralink  
+       git clone -b develop https://github.com/eclipse/paho.mqtt-sn.embedded-c  
+       cd paho.mqtt-sn.embedded-c/MQTTSNGateway      
+       ./build.sh loralink  
 ````
    
 ### 2. Sensornetwork devices
 ````
-   git clone https://github.com/ty4tw/LoRaMQTT-SN.git
+       git clone https://github.com/ty4tw/LoRaMQTT-SN.git
 ````
    #### 2-1 RxDevice for the Gateway
 ````
