@@ -48,7 +48,7 @@ https://www.st.com/en/development-tools/stm32cubeprog.html
 ## LoRaLink
 #### LoRaLink is a simple protocol prepared for MQTT-SN.  It's a different from LoRaWAN.
 ![LoRaLink](https://user-images.githubusercontent.com/7830788/87379815-12f0e980-c5cc-11ea-8a06-9a2498acdff4.png)
-## Sensor Network Application layer protocol
+## Sensor Network Transport layer protocol
 This protocol is handled in loralink/SensorNetwork.cpp
 ![LoRaLinkApi](https://user-images.githubusercontent.com/7830788/87870157-86d22e00-c9e0-11ea-8c3d-b472a2dff25a.png)
 # Required devices
